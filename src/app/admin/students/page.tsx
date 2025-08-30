@@ -5,8 +5,6 @@ import { useSearchParams } from 'next/navigation'
 import StudentsList, { StudentsListSkeleton, StudentsListWithSuspense } from '@/components/admin/StudentsList'
 import QuickActions from '@/components/admin/QuickActions'
 import AddStudentModal from '../components/modals/AddStudentModal'
-import EditStudentModal from '@/components/admin/modals/EditStudentModal'
-import DeleteConfirmationModal from '@/components/admin/modals/DeleteConfirmationModal'
 import { User } from 'lucide-react'
 
 export default function StudentsPage() {
