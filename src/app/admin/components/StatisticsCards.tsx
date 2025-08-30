@@ -28,22 +28,33 @@ function formatNumber(num: number): string {
   return num.toString()
 }
 
-function formatLastSync(date: Date): string {
+function formatLastSync(date: any): string {
   if (!date) return 'Never'
 
-  const now = new Date()
-  const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
+  try {
+    // Ensure we have a proper Date object
+    const dateObj = date instanceof Date ? date : new Date(date)
 
-  if (diffInMinutes < 1) return 'Just now'
-  if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+    // Check if the date is valid
+    if (isNaN(dateObj.getTime())) return 'Never'
 
-  const diffInHours = Math.floor(diffInMinutes / 60)
-  if (diffInHours < 24) return `${diffInHours}h ago`
+    const now = new Date()
+    const diffInMinutes = Math.floor((now.getTime() - dateObj.getTime()) / (1000 * 60))
 
-  const diffInDays = Math.floor(diffInHours / 24)
-  if (diffInDays < 7) return `${diffInDays}d ago`
+    if (diffInMinutes < 1) return 'Just now'
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
 
-  return date.toLocaleDateString()
+    const diffInHours = Math.floor(diffInMinutes / 60)
+    if (diffInHours < 24) return `${diffInHours}h ago`
+
+    const diffInDays = Math.floor(diffInHours / 24)
+    if (diffInDays < 7) return `${diffInDays}d ago`
+
+    return dateObj.toLocaleDateString()
+  } catch (error) {
+    console.warn('Error formatting date:', error, date)
+    return 'Never'
+  }
 }
 
 async function StatisticsCardsServer() {
