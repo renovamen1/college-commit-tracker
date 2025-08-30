@@ -66,6 +66,7 @@ export default function RecentActivity() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'recent' | 'commits'>('recent')
+  const [lastUpdated, setLastUpdated] = useState('')
 
   useEffect(() => {
     const fetchData = async () => {
@@ -75,8 +76,10 @@ export default function RecentActivity() {
           fetchRecentUsers(),
           fetchHighCommitUsers()
         ])
-        setRecentUsers(recent)
-        setHighCommitUsers(highCommits)
+        // Ensure arrays are initialized even if API returns null/undefined
+        setRecentUsers(Array.isArray(recent) ? recent : [])
+        setHighCommitUsers(Array.isArray(highCommits) ? highCommits : [])
+        setLastUpdated(new Date().toLocaleTimeString())
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load data')
       } finally {
@@ -89,6 +92,11 @@ export default function RecentActivity() {
     // Auto-refresh every 60 seconds
     const interval = setInterval(fetchData, 60000)
     return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    // Set initial time on client side only to prevent hydration mismatch
+    setLastUpdated(new Date().toLocaleTimeString())
   }, [])
 
   const tabs = [
@@ -174,7 +182,7 @@ export default function RecentActivity() {
       <div className="mt-6 pt-4 border-t border-gray-200">
         <div className="flex items-center justify-center text-xs text-gray-500">
           <Calendar className="h-3 w-3 mr-1" />
-          Auto-refreshes every 60 seconds • Last updated {new Date().toLocaleTimeString()}
+          Auto-refreshes every 60 seconds • Last updated {lastUpdated || 'Loading...'}
         </div>
       </div>
     </div>
