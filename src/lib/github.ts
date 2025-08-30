@@ -1,7 +1,7 @@
 import { Octokit } from '@octokit/rest'
 import { Repository, GitHubCommit } from '../types'
 
-const token = process.env.GITHUB_TOKEN
+const token = process.env.GITHUB_ACCESS_TOKEN
 const octokit = token ? new Octokit({ auth: token }) : new Octokit()
 
 // Helper function for retry logic
