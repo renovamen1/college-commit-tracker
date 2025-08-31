@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Logo } from '@/components/ui/Logo'
-import { Search } from 'lucide-react'
+import { HoverNotifications, ProfileAvatar } from '@/components/ui/NavigationIcons'
 
 export default function HomeLayout({
   children,
@@ -75,9 +75,7 @@ export default function HomeLayout({
             </svg>
           </button>
 
-          <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style={{
-            backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCALmq1nQQo7en9Q4QxpMGPTC5suJr3aUy9xua5TlnnWSVI47brkra-UN8L2ldvnD6GQuffTtEGR1oOKyLamOTHI_XpbCY41xbKHsX0dwyKAKImt77anZYuTrdXQdojQZx-c18TioiTJVH1t9C9nnPUqNCh2DOQdy27fGEk8TMyNxkLYRFYz25r93hhExLQterSSMxp-wCnvEnoEoGannoxCo0MBhZRPdgxrMYG_phjs7omJNHoI4vdKwCtA5yzX-muf3pMTB_zS7w")'
-          }}></div>
+          <ProfileAvatar />
         </div>
       </header>
 

@@ -1,4 +1,18 @@
+'use client'
+
+import { useRouter } from 'next/navigation'
+
 export default function ProfilePage() {
+  const router = useRouter()
+
+  const handleLogout = () => {
+    // Clear authentication
+    localStorage.removeItem('isLoggedIn')
+    localStorage.removeItem('userEmail')
+    // Redirect to home (which will show landing page)
+    router.push('/')
+  }
+
   return (
     <div className="mx-auto max-w-7xl">
       <div className="grid grid-cols-12 gap-8">
@@ -46,6 +60,15 @@ export default function ProfilePage() {
                 </svg>
                 <span>Preferences</span>
               </a>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-3 text-red-400 hover:text-red-300 bg-[#192633] hover:bg-red-900/20 border border-[#233648] rounded-lg p-4 transition-colors w-full text-left"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
+                </svg>
+                <span>Logout</span>
+              </button>
             </div>
           </div>
         </div>
