@@ -13,14 +13,21 @@ export default function ClassesPage() {
   return (
     <>
       {/* Header */}
-      <header className="mb-8">
-        <h1 className="text-white text-4xl font-bold leading-tight tracking-tighter min-w-72">
+      <div className="flex flex-col gap-2">
+        <nav className="flex items-center gap-2 text-sm text-gray-400 mb-4">
+          <a href="/" className="hover:text-white transition-colors">Home</a>
+          <span>/</span>
+          <a href="/admin" className="hover:text-white transition-colors">Dashboard</a>
+          <span>/</span>
+          <span className="text-white">Classes</span>
+        </nav>
+        <h2 className="text-white text-4xl font-bold leading-tight tracking-tighter">
           Computer Science 101
-        </h1>
-        <p className="text-white/60 mt-2">
+        </h2>
+        <p className="text-[#92adc9] text-base font-normal leading-normal">
           Detailed view of class activity and contributions.
         </p>
-      </header>
+      </div>
 
       {/* Navigation Tabs */}
       <div className="border-b border-[#324d67]">

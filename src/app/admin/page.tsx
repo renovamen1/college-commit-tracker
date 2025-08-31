@@ -7,6 +7,7 @@ export default function AdminDashboard() {
     <>
       {/* Dashboard Header */}
       <div className="flex flex-col gap-2">
+
         <h2 className="text-white text-4xl font-bold leading-tight tracking-tighter">
           Dashboard
         </h2>
