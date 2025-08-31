@@ -1,79 +1,107 @@
 'use client'
 
-import { useState, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
-import StudentsList, { StudentsListSkeleton, StudentsListWithSuspense } from '@/components/admin/StudentsList'
-import QuickActions from '@/components/admin/QuickActions'
+import { useState } from 'react'
 import AddStudentModal from '../components/modals/AddStudentModal'
-import { User } from 'lucide-react'
 
-export default function StudentsPage() {
+export default function ClassesPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [editingStudent, setEditingStudent] = useState<any>(null)
-  const [deletingStudent, setDeletingStudent] = useState<any>(null)
-  const [refreshKey, setRefreshKey] = useState(0)
-
-  const searchParams = useSearchParams()
-  const currentClass = searchParams.get('class')
-  const searchQuery = searchParams.get('search')
 
   const handleStudentAdded = () => {
     setIsAddModalOpen(false)
-    setRefreshKey(prev => prev + 1)
   }
-
-  const handleStudentUpdated = () => {
-    setEditingStudent(null)
-    setRefreshKey(prev => prev + 1)
-  }
-
-  const handleStudentDeleted = () => {
-    setDeletingStudent(null)
-    setRefreshKey(prev => prev + 1)
-  }
-
-  const quickActions = [
-    {
-      id: 'add-student',
-      title: 'Add Student',
-      description: 'Add a new student to the system',
-      icon: User,
-      onClick: () => setIsAddModalOpen(true)
-    }
-  ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Students Management</h1>
-          <p className="text-gray-600">Manage college students and their GitHub activity tracking</p>
-        </div>
+    <>
+      {/* Header */}
+      <header className="mb-8">
+        <h1 className="text-white text-4xl font-bold leading-tight tracking-tighter min-w-72">
+          Computer Science 101
+        </h1>
+        <p className="text-white/60 mt-2">
+          Detailed view of class activity and contributions.
+        </p>
+      </header>
 
-        {/* Quick Actions */}
-        <div className="mb-8">
-          <QuickActions
-            actions={quickActions}
-            className="max-w-md"
-          />
-        </div>
-
-        {/* Students List */}
-        <div className="bg-white rounded-lg shadow">
-          <Suspense fallback={<StudentsListSkeleton />}>
-            <StudentsList
-              key={refreshKey}
-              onStudentSelect={(student) => setEditingStudent(student)}
-            />
-          </Suspense>
-        </div>
-
-        {/* Bulk Actions Panel */}
-        <div className="mt-8">
-          <BulkActionPanel />
-        </div>
+      {/* Navigation Tabs */}
+      <div className="border-b border-[#324d67]">
+        <nav className="flex gap-8">
+          <button className="flex items-center justify-center border-b-2 border-b-[#1172d4] text-white pb-3 pt-1">
+            <p className="text-white text-sm font-semibold leading-normal">Overview</p>
+          </button>
+          <button className="flex items-center justify-center border-b-2 border-b-transparent text-white/60 hover:text-white transition-colors pb-3 pt-1">
+            <p className="text-sm font-semibold leading-normal">Members</p>
+          </button>
+          <button className="flex items-center justify-center border-b-2 border-b-transparent text-white/60 hover:text-white transition-colors pb-3 pt-1">
+            <p className="text-sm font-semibold leading-normal">Repositories</p>
+          </button>
+        </nav>
       </div>
+
+      {/* Activity Metrics */}
+      <section className="mt-8">
+        <h2 className="text-white text-2xl font-bold leading-tight tracking-tight">
+          Activity Metrics
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
+          <div className="flex flex-col gap-2 rounded-md p-6 bg-[#192633] border border-[#324d67]">
+            <p className="text-white/60 text-base font-medium leading-normal">Total Commits</p>
+            <p className="text-white tracking-light text-3xl font-bold leading-tight">1,250</p>
+          </div>
+          <div className="flex flex-col gap-2 rounded-md p-6 bg-[#192633] border border-[#324d67]">
+            <p className="text-white/60 text-base font-medium leading-normal">Active Contributors</p>
+            <p className="text-white tracking-light text-3xl font-bold leading-tight">45</p>
+          </div>
+          <div className="flex flex-col gap-2 rounded-md p-6 bg-[#192633] border border-[#324d67]">
+            <p className="text-white/60 text-base font-medium leading-normal">Repositories</p>
+            <p className="text-white tracking-light text-3xl font-bold leading-tight">12</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Member Contributions Table */}
+      <section className="mt-12">
+        <h2 className="text-white text-2xl font-bold leading-tight tracking-tight">
+          Member Contributions
+        </h2>
+        <div className="mt-4 overflow-x-auto">
+          <div className="inline-block min-w-full align-middle">
+            <div className="overflow-hidden rounded-md border border-[#324d67] bg-[#111a22]">
+              <table className="min-w-full divide-y divide-[#324d67]">
+                <thead className="bg-[#192633]">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">
+                      Member
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">
+                      Commits
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">
+                      Last Active
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#324d67]">
+                  <tr>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">Ethan Harper</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-[#92adc9]">250</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-[#92adc9]">2 days ago</td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">Olivia Bennett</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-[#92adc9]">220</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-[#92adc9]">3 days ago</td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">Noah Carter</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-[#92adc9]">200</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-[#92adc9]">1 day ago</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Modals */}
       <AddStudentModal
@@ -81,26 +109,7 @@ export default function StudentsPage() {
         onClose={() => setIsAddModalOpen(false)}
         onStudentAdded={handleStudentAdded}
       />
-
-      {editingStudent && (
-        <EditStudentModal
-          isOpen={!!editingStudent}
-          student={editingStudent}
-          onClose={() => setEditingStudent(null)}
-          onStudentUpdated={handleStudentUpdated}
-        />
-      )}
-
-      {deletingStudent && (
-        <DeleteConfirmationModal
-          isOpen={!!deletingStudent}
-          title="Delete Student"
-          message={`Are you sure you want to delete ${deletingStudent.name}? This action cannot be undone.`}
-          onClose={() => setDeletingStudent(null)}
-          onConfirm={handleStudentDeleted}
-        />
-      )}
-    </div>
+    </>
   )
 }
 

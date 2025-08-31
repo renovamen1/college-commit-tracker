@@ -1,19 +1,38 @@
-import StatisticsCards from './components/StatisticsCards'
-import RecentActivity from './components/RecentActivity'
-import AdminDashboardClient from './components/AdminDashboardClient'
+import { GitHubActivityChart } from './components/GitHubActivityChart'
+import { TopContributors } from './components/TopContributors'
+import { LeaderboardSection } from './components/LeaderboardSection'
 
 export default function AdminDashboard() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="mt-2 text-gray-600">Manage students, classes, and track GitHub contributions</p>
+    <>
+      {/* Dashboard Header */}
+      <div className="flex flex-col gap-2">
+        <h2 className="text-white text-4xl font-bold leading-tight tracking-tighter">
+          Dashboard
+        </h2>
+        <p className="text-[#92adc9] text-base font-normal leading-normal">
+          Track your progress and see how your class and department are doing.
+        </p>
+      </div>
+
+      {/* Dashboard Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column - Main Content */}
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          {/* Leaderboard Section */}
+          <LeaderboardSection />
+
+          {/* GitHub Activity Section */}
+          <section className="bg-[#192633] rounded-md border border-[#233648] p-6">
+            <GitHubActivityChart />
+          </section>
         </div>
 
-        {/* Use Client Component for interactive features */}
-        <AdminDashboardClient />
+        {/* Right Column - Sidebar */}
+        <aside className="lg:col-span-1">
+          <TopContributors />
+        </aside>
       </div>
-    </div>
+    </>
   )
 }

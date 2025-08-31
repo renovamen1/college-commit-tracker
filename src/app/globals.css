@@ -1,27 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,700;0,900;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:ital,wght@0,400;0,500;0,600;0,700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  /* Primary brand color */
+  --primary-color: #1173D4;
+
+  /* Background colors */
+  --bg-primary: #111A22;
+  --bg-secondary: #192633;
+  --bg-accent: #233648;
+  --bg-card: #192633;
+
+  /* Text colors */
+  --text-primary: #FFFFFF;
+  --text-secondary: #92ADC9;
+  --text-muted: #92ADC9;
+  --text-accent: #FFFFFF;
+
+  /* Border colors */
+  --border-color: #233648;
+
+  /* Hover states */
+  --hover-bg: #192633;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #1173D4, #0B5A9F);
+
+  /* Layout */
+  --header-height: 3.5rem;
+
+  /* Font Families */
+  --font-primary: 'Space Grotesk', 'Noto Sans', sans-serif;
+  --font-secondary: 'Noto Sans', sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
-}
-
+/* Override default Next.js body styles */
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  font-family: var(--font-primary);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* Custom button styles */
+.btn-primary {
+  background: var(--gradient-primary);
+  color: var(--text-primary);
+  font-family: var(--font-primary);
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+/* Custom card styles */
+.card {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+/* Custom input styles */
+.input-primary {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-family: var(--font-secondary);
+}
+
+.input-primary:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  ring: 2px solid var(--primary-color);
+}
+
+/* Custom link styles */
+.link-primary {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.link-primary:hover {
+  opacity: 0.8;
+}
+
+/* Custom animation utilities */
+.animate-fade-in {
+  animation: fade-in 0.3s ease-in-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
