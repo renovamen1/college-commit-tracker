@@ -29,3 +29,50 @@ Thumbs.db
 *.swp
 
 .clinerules
+
+# Development & Testing Files
+test-run-app.js
+test-db-connection.js
+test-github.js
+test-github.ts
+
+# Database Scripts
+seed-database.mjs
+src/scripts/seedData.cjs
+
+# Temporary Admin Pages
+src/app/admin/manage/
+
+# Coverage Reports
+coverage/
+*.lcov
+
+# Runtime Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Specific Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Cache Directories
+.next/
+out/
+build/
+dist/
+.cache/
+esbuild/

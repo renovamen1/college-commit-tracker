@@ -9,7 +9,7 @@ export default function AboutPage() {
       {/* Hero Section with Background */}
       <section className="relative py-20 md:py-32">
         <div className="absolute inset-0 bg-cover bg-center" style={{
-          backgroundImage: `url("https://lh3.googleusercontent.com/aida-public/AB6AXuCYbY4hpLyN8VXOSX-0E6qZjdI8TJvdEqSaKiqMtrQbkJqXN5BwING2U3w4E34WzlqdQVhanMcGytIrT6kHaMjk8DbkEMGuiT3v1yg96kOfbX8yr3FEfbldBv0GuXFa4GsNmZXfDtM3kbANHONyt4rAdfPB6Puz-yrAhey7z2q9W8RIMvo3AUqHM7pu9PitSg3RPTGwjU74aEIxo5qEraE9kL5vlmVKxx41_6I59fdeDoDKs3NywvyV3lslriCEsgYu6bU04_7RBGI")`
+          backgroundImage: `url("/assets/miracle.jpeg")`
         }}></div>
         <div className="absolute inset-0 bg-gradient-to-b from-[#111a22]/80 via-[#111a22]/60 to-[#111a22]/80"></div>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
@@ -155,7 +155,7 @@ export default function AboutPage() {
             </div>
           </div>
           <p className="mt-8 text-center text-sm text-[var(--text-secondary)]">
-            © 2024 CommitTracker. All rights reserved.
+            © 2025 CommitTracker. All rights reserved.
           </p>
         </div>
       </footer>
