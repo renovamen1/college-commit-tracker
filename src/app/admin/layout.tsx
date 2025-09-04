@@ -13,8 +13,9 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-[#111A22] text-white">
-      {/* Admin Header - Always visible in admin section */}
-      <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#233648] px-10 py-3 bg-[#111A22] sticky top-0 z-50">
+      {/* Admin Header - Hidden on login page */}
+      {pathname !== '/admin/login' && (
+        <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#233648] px-10 py-3 bg-[#111A22] sticky top-0 z-50">
         {/* Logo & Brand */}
         <div className="flex items-center gap-3">
           <a href="/" className="flex items-center gap-3">
@@ -74,6 +75,7 @@ export default function AdminLayout({
           </button>
         </div>
       </header>
+      )}
 
       {/* Admin Content Area */}
       <main className="flex flex-1 justify-center py-10 px-4 sm:px-10">
