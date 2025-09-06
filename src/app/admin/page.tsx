@@ -86,7 +86,7 @@ export default function AdminDashboard() {
                   <a className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white" href="/admin/students" role="menuitem">
                     Users
                   </a>
-                  <a className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white" href="/admin/manage" role="menuitem">
+                  <a className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white" href="/admin/departments" role="menuitem">
                     Departments & Classes
                   </a>
                   <a className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white" href="#" role="menuitem">
