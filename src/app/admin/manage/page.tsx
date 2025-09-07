@@ -69,6 +69,17 @@ export default function ManageModeratorsPage() {
   const [moderators, setModerators] = useState<Moderator[]>(mockModerators)
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
+  const [formData, setFormData] = useState({
+    fullName: '',
+    username: '',
+    email: '',
+    permissions: {
+      manageUsers: false,
+      manageClasses: false,
+      manageDepartments: false,
+      viewReports: false
+    }
+  })
 
   const filteredModerators = moderators.filter(moderator =>
     moderator.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -123,7 +134,10 @@ export default function ManageModeratorsPage() {
               <h1 className="text-3xl font-bold text-white">Manage Moderators</h1>
               <p className="text-gray-400">View and manage moderators for the platform.</p>
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-[#1173d4] text-white rounded-md hover:bg-blue-600 transition-colors">
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-[#1173d4] text-white rounded-md hover:bg-blue-600 transition-colors"
+            >
               <span className="material-symbols-outlined">add</span>
               <span>Add New Moderator</span>
             </button>
@@ -188,59 +202,135 @@ export default function ManageModeratorsPage() {
             <div className="fixed inset-0 z-50 overflow-y-auto">
               <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
                 <div className="fixed inset-0 transition-opacity bg-gray-900 opacity-75" aria-hidden="true"></div>
-                <div className="inline-block w-full max-w-md p-6 overflow-hidden text-left align-bottom transition-all transform bg-gray-800 border border-gray-700 rounded-lg shadow-xl sm:my-8 sm:align-middle">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-white">Add New Moderator</h3>
-                    <button
-                      onClick={() => setShowAddModal(false)}
-                      className="text-gray-400 hover:text-white"
-                    >
-                      <span className="material-symbols-outlined">close</span>
-                    </button>
-                  </div>
-                  <form className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Name</label>
-                      <input
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Full name"
-                        type="text"
-                      />
+                <div className="inline-block w-full max-w-2xl p-6 overflow-hidden text-left align-bottom transition-all transform bg-gray-900 border border-gray-700 rounded-lg shadow-xl sm:my-8 sm:align-middle">
+                  <main className="p-0 bg-transparent">
+                    <div className="flex justify-between items-center mb-6">
+                      <div>
+                        <h1 className="text-3xl font-bold text-white">Add New Moderator</h1>
+                        <p className="text-gray-400">Create a new moderator account and assign permissions.</p>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
-                      <input
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Email address"
-                        type="email"
-                      />
+
+                    <div className="bg-[#1f2937] p-8 rounded-lg border border-gray-700/50">
+                      <form className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="fullName">Full Name</label>
+                            <input
+                              className="w-full bg-gray-800 border border-gray-700 rounded-md py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-[#1173d4]"
+                              id="fullName"
+                              placeholder="Enter full name"
+                              type="text"
+                              value={formData.fullName}
+                              onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="username">Username</label>
+                            <input
+                              className="w-full bg-gray-800 border border-gray-700 rounded-md py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-[#1173d4]"
+                              id="username"
+                              placeholder="Enter desired username"
+                              type="text"
+                              value={formData.username}
+                              onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="email">Email Address</label>
+                          <input
+                            className="w-full bg-gray-800 border border-gray-700 rounded-md py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-[#1173d4]"
+                            id="email"
+                            placeholder="Enter email address"
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                          />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white mb-4">Assign Permissions</h3>
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between bg-gray-800/50 p-4 rounded-md">
+                              <span className="text-gray-300">Manage Users</span>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  className="sr-only peer"
+                                  type="checkbox"
+                                  checked={formData.permissions.manageUsers}
+                                  onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    permissions: { ...prev.permissions, manageUsers: e.target.checked }
+                                  }))}
+                                />
+                                <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                              </label>
+                            </div>
+                            <div className="flex items-center justify-between bg-gray-800/50 p-4 rounded-md">
+                              <span className="text-gray-300">Manage Classes</span>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  className="sr-only peer"
+                                  type="checkbox"
+                                  checked={formData.permissions.manageClasses}
+                                  onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    permissions: { ...prev.permissions, manageClasses: e.target.checked }
+                                  }))}
+                                />
+                                <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                              </label>
+                            </div>
+                            <div className="flex items-center justify-between bg-gray-800/50 p-4 rounded-md">
+                              <span className="text-gray-300">Manage Departments</span>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  className="sr-only peer"
+                                  type="checkbox"
+                                  checked={formData.permissions.manageDepartments}
+                                  onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    permissions: { ...prev.permissions, manageDepartments: e.target.checked }
+                                  }))}
+                                />
+                                <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                              </label>
+                            </div>
+                            <div className="flex items-center justify-between bg-gray-800/50 p-4 rounded-md">
+                              <span className="text-gray-300">View Reports</span>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  className="sr-only peer"
+                                  type="checkbox"
+                                  checked={formData.permissions.viewReports}
+                                  onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    permissions: { ...prev.permissions, viewReports: e.target.checked }
+                                  }))}
+                                />
+                                <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-4 pt-6">
+                          <button
+                            type="button"
+                            onClick={() => setShowAddModal(false)}
+                            className="px-6 py-2 bg-gray-700/50 text-white rounded-md hover:bg-gray-600/50 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            className="px-6 py-2 bg-[#1173d4] text-white rounded-md hover:bg-blue-600 transition-colors shadow-lg"
+                          >
+                            Create Moderator
+                          </button>
+                        </div>
+                      </form>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Permissions</label>
-                      <select className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option>User Management</option>
-                        <option>Class Management</option>
-                        <option>Department Management</option>
-                        <option>Limited Access</option>
-                        <option>Full Access</option>
-                      </select>
-                    </div>
-                    <div className="flex justify-end gap-3 pt-4">
-                      <button
-                        type="button"
-                        onClick={() => setShowAddModal(false)}
-                        className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-500 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition-colors"
-                      >
-                        Add Moderator
-                      </button>
-                    </div>
-                  </form>
+                  </main>
                 </div>
               </div>
             </div>
