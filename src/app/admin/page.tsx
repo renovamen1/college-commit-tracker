@@ -116,10 +116,12 @@ export default function AdminDashboard() {
                   <span className="material-symbols-outlined text-xl">group</span>
                   <span className="truncate">Manage Users</span>
                 </button>
-                <button className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-gray-800 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0,0.05),0_2px_4px_rgba(0,0,0,0,0.1)] transition-all hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900">
-                  <span className="material-symbols-outlined text-xl">corporate_fare</span>
-                  <span className="truncate">Manage Departments</span>
-                </button>
+                <Link href="/admin/departments">
+                  <button className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-gray-800 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0,0.05),0_2px_4px_rgba(0,0,0,0,0.1)] transition-all hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900">
+                    <span className="material-symbols-outlined text-xl">corporate_fare</span>
+                    <span className="truncate">Manage Departments</span>
+                  </button>
+                </Link>
                 <button className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-gray-800 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0,0.05),0_2px_4px_rgba(0,0,0,0,0.1)] transition-all hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900">
                   <span className="material-symbols-outlined text-xl">school</span>
                   <span className="truncate">Manage Classes</span>
