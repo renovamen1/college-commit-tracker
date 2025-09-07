@@ -118,42 +118,30 @@ export default function DepartmentsPage() {
         <header className="flex w-full flex-col">
           <div className="flex items-center justify-between border-b border-gray-800 bg-gray-950 px-6 py-4">
             <div className="flex items-center gap-3">
-              <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-                style={{ backgroundImage: `url("https://lh3.googleusercontent.com/aida-public/AB6AXuB0KnE2jd8h3b0pibOe4BArlpWB7LIgOmyO9vBjOLFB6kXPhHvbIV4J7i6PB0wpptddY074exSZivxrA36jGpD9uh7Ed4FWzVhvWi2zSND5WyCWan_jPOk8AXAmGPAwH-6gUxwKwtNTIpoUcEZF0KRGgmIwe2rWA4GPBANO38sxoVTP3AzhNZzgMDf6LQbXpxYbA8KeIX1jl7ZUeR-aa90RRvsx4ft-zec0PKE7vbMM7B16Zq0fJWHndaDabIQp27t2Fd7Yro-1zMA")` }}>
-              </div>
+              <div
+                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
+                style={{
+                  backgroundImage: `url("https://lh3.googleusercontent.com/aida-public/AB6AXuB0KnE2jd8h3b0pibOe4BArlpWB7LIgOmyO9vBjOLFB6kXPhHvbIV4J7i6PB0wpptddY074exSZivxrA36jGpD9uh7Ed4FWzVhvWi2zSND5WyCWan_jPOk8AXAmGPAwH-6gUxwKwtNTIpoUcEZF0KRGgmIwe2rWA4GPBANO38sxoVTP3AzhNZzgMDf6LQbXpxYbA8KeIX1jl7ZUeR-aa90RRvsx4ft-zec0PKE7vbMM7B16Zq0fJWHndaDabIQp27t2Fd7Yro-1zMA")`
+                }}
+              />
               <h1 className="text-white text-lg font-bold leading-normal">CodeCommit</h1>
             </div>
             <nav className="flex items-center gap-6">
-              <a className="text-gray-400 hover:text-white text-sm font-medium transition-colors" href="/admin">
+              <a href="/admin" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
                 Dashboard
               </a>
-              <a className="text-gray-400 hover:text-white text-sm font-medium transition-colors" href="/admin/leaderboard">
+              <a href="/admin/leaderboard" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
                 Leaderboard
               </a>
-              <div className="group relative">
-                <button className="flex items-center gap-1 text-gray-400 hover:text-white text-sm font-medium transition-colors" onClick={() => setManageDropdown(!manageDropdown)}>
-                  <span>Manage</span>
-                  <svg className="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="m6 9 6 6 6-6"></path>
-                  </svg>
-                </button>
-                <div className={`absolute z-10 mt-2 w-56 origin-top-right rounded-md bg-gray-900 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none ${manageDropdown ? 'block' : 'hidden'}`}>
-                  <div className="py-1">
-                    <a className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white" href="/admin/students" role="menuitem">
-                      Users
-                    </a>
-                    <a className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white" href="/admin/departments" role="menuitem">
-                      Departments & Classes
-                    </a>
-                    <a className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white" href="#" role="menuitem">
-                      Settings
-                    </a>
-                  </div>
-                </div>
-              </div>
-              <a className="text-gray-400 hover:text-white" href="/profile">
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40.31,185.66,25.08,212a8,8,0,1,0,13.84,8c18.1-31.31,47.69-48,80.08-48s61.98,16.69,80.08,48a8,8,0,0,0,13.84-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z"/>
+              <a href="/admin/classes" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
+                Classes
+              </a>
+              <button className="flex items-center justify-center rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700">
+                Logout
+              </button>
+              <a href="/profile" className="text-gray-400 hover:text-white">
+                <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40.31,185.66,25.08,212a8,8,0,1,0,13.84,8c18.1-31.31,47.69-48,80.08-48s61.98,16.69,80.08,48a8,8,0,0,0,13.84-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z"></path>
                 </svg>
               </a>
             </nav>
