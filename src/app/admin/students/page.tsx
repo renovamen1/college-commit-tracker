@@ -58,7 +58,7 @@ export default function UsersManagePage() {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [successMessage, setSuccessMessage] = useState('')
-  const [showManageDropdown, setShowManageDropdown] = useState(false)
+
 
   const usersPerPage = 10
   const totalPages = Math.ceil(users.length / usersPerPage)
@@ -154,40 +154,23 @@ export default function UsersManagePage() {
                 <h1 className="text-white text-lg font-bold leading-normal">CodeCommit</h1>
               </div>
               <nav className="flex items-center gap-6">
-                <a className="text-gray-400 hover:text-white text-sm font-medium transition-colors" href="/admin">Dashboard</a>
-                <a className="text-gray-400 hover:text-white text-sm font-medium transition-colors" href="/admin/leaderboard">Leaderboard</a>
-                <div className="group relative">
-                  <button
-                    className="flex items-center gap-1 text-white text-sm font-medium transition-colors"
-                    onMouseEnter={() => setShowManageDropdown(true)}
-                    onMouseLeave={() => setShowManageDropdown(false)}
-                  >
-                    <span>Manage</span>
-                    <svg className="w-4 h-4 transition-transform duration-200" fill="none" height="24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-                      <path d="m6 9 6 6 6-6"></path>
-                    </svg>
-                  </button>
-                  {showManageDropdown && (
-                    <div className="absolute z-10 mt-2 w-56 origin-top-right rounded-md bg-gray-900 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                      <div className="py-1" onMouseEnter={() => setShowManageDropdown(true)} onMouseLeave={() => setShowManageDropdown(false)}>
-                        <Link href="/admin/students" className="block px-4 py-2 text-sm text-white bg-gray-800">
-                          Users
-                        </Link>
-                        <a className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white" href="/admin/classes">
-                          Departments & Classes
-                        </a>
-                        <a className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white" href="/admin/settings">
-                          Settings
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <a className="text-gray-400 hover:text-white" href="/profile">
+                <Link href="/admin" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
+                  Dashboard
+                </Link>
+                <Link href="/admin/leaderboard" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
+                  Leaderboard
+                </Link>
+                <Link href="/admin/classes" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
+                  Classes
+                </Link>
+                <button className="flex items-center justify-center rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700">
+                  Logout
+                </button>
+                <Link href="/profile" className="text-gray-400 hover:text-white">
                   <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
                     <path d="M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40.31,185.66,25.08,212a8,8,0,1,0,13.84,8c18.1-31.31,47.69-48,80.08-48s61.98,16.69,80.08,48a8,8,0,0,0,13.84-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z"></path>
                   </svg>
-                </a>
+                </Link>
               </nav>
             </div>
           </header>
