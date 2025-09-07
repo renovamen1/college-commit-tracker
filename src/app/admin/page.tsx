@@ -41,7 +41,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="relative flex size-full min-h-screen flex-col dark group/design-root overflow-x-hidden" style={{fontFamily: "'Space Grotesk', 'Noto Sans', sans-serif"}}>
+    <div className="relative flex size-full min-h-screen flex-col bg-gray-900" style={{fontFamily: "'Space Grotesk', 'Noto Sans', sans-serif"}}>
       <div className="layout-container flex h-full grow flex-col">
         <header className="flex w-full flex-col">
           <div className="flex items-center justify-between border-b border-gray-800 bg-gray-950 px-6 py-4">
@@ -75,21 +75,23 @@ export default function AdminDashboard() {
             </nav>
           </div>
         </header>
+
         <main className="flex flex-1 flex-col p-8">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-white tracking-light text-4xl font-bold leading-tight">Admin Dashboard</h1>
             <div className="flex items-center gap-4">
-              <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-md h-12 px-6 bg-gray-800 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0,0.05),0_2px_4px_rgba(0,0,0,0,0.1)] transition-all hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900">
+              <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-md h-12 px-6 bg-gray-800 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_2px_4px_rgba(0,0,0,0.1)] transition-all hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900">
                 <span className="truncate">Export Data</span>
               </button>
               <button
-                className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-md h-12 px-6 bg-[var(--primary-color)] text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0,0.05),0_2px_4px_rgba(0,0,0,0,0.1)] transition-all hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:ring-offset-2 focus:ring-offset-gray-900"
+                className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-md h-12 px-6 bg-[var(--primary-color)] text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_2px_4px_rgba(0,0,0,0.1)] transition-all hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:ring-offset-2 focus:ring-offset-gray-900"
                 onClick={() => setShowAddUserModal(true)}
               >
                 <span className="truncate">Add User</span>
               </button>
             </div>
           </div>
+
           <div className="flex w-full flex-col gap-8 @container">
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
               <div className="flex flex-col gap-2 rounded-md border border-gray-800 bg-gray-950 p-6">
@@ -109,33 +111,37 @@ export default function AdminDashboard() {
                 <p className="text-white tracking-tight text-4xl font-bold leading-tight">42</p>
               </div>
             </div>
+
             <div className="flex flex-col gap-4">
               <h2 className="text-white text-2xl font-bold leading-tight tracking-[-0.015em]">Quick Actions</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <button className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-gray-800 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0,0.05),0_2px_4px_rgba(0,0,0,0.1)] transition-all hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900">
-                  <span className="material-symbols-outlined text-xl">group</span>
-                  <span className="truncate">Manage Users</span>
-                </button>
+                <Link href="/admin/students">
+                  <button className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-gray-800 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_2px_4px_rgba(0,0,0,0.1)] transition-all hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900">
+                    <span className="material-symbols-outlined text-xl">group</span>
+                    <span className="truncate">Manage Users</span>
+                  </button>
+                </Link>
                 <Link href="/admin/departments">
-                  <button className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-gray-800 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0,0.05),0_2px_4px_rgba(0,0,0,0,0.1)] transition-all hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900">
+                  <button className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-gray-800 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_2px_4px_rgba(0,0,0,0.1)] transition-all hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900">
                     <span className="material-symbols-outlined text-xl">corporate_fare</span>
                     <span className="truncate">Manage Departments</span>
                   </button>
                 </Link>
                 <Link href="/admin/classes">
-                  <button className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-gray-800 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0,0.05),0_2px_4px_rgba(0,0,0,0,0.1)] transition-all hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900">
+                  <button className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-gray-800 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_2px_4px_rgba(0,0,0,0,0.1)] transition-all hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900">
                     <span className="material-symbols-outlined text-xl">school</span>
                     <span className="truncate">Manage Classes</span>
                   </button>
                 </Link>
                 <Link href="/admin/manage">
-                  <button className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-gray-800 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0,0.05),0_2px_4px_rgba(0,0,0,0,0.1)] transition-all hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900">
+                  <button className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-gray-800 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_2px_4px_rgba(0,0,0,0.1)] transition-all hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900">
                     <span className="material-symbols-outlined text-xl">shield_person</span>
                     <span className="truncate">Manage Moderators</span>
                   </button>
                 </Link>
               </div>
             </div>
+
             <div className="grid grid-cols-1 gap-8 mt-8">
               <div className="flex flex-col gap-4">
                 <h2 className="text-white text-2xl font-bold leading-tight tracking-[-0.015em]">Data Management</h2>
