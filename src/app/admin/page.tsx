@@ -122,14 +122,18 @@ export default function AdminDashboard() {
                     <span className="truncate">Manage Departments</span>
                   </button>
                 </Link>
-                <button className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-gray-800 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0,0.05),0_2px_4px_rgba(0,0,0,0,0.1)] transition-all hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900">
-                  <span className="material-symbols-outlined text-xl">school</span>
-                  <span className="truncate">Manage Classes</span>
-                </button>
-                <button className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-gray-800 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0,0.05),0_2px_4px_rgba(0,0,0,0,0.1)] transition-all hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900">
-                  <span className="material-symbols-outlined text-xl">shield_person</span>
-                  <span className="truncate">Manage Moderators</span>
-                </button>
+                <Link href="/admin/classes">
+                  <button className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-gray-800 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0,0.05),0_2px_4px_rgba(0,0,0,0,0.1)] transition-all hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900">
+                    <span className="material-symbols-outlined text-xl">school</span>
+                    <span className="truncate">Manage Classes</span>
+                  </button>
+                </Link>
+                <Link href="/admin/manage">
+                  <button className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-gray-800 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0,0.05),0_2px_4px_rgba(0,0,0,0,0.1)] transition-all hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 focus:ring-offset-gray-900">
+                    <span className="material-symbols-outlined text-xl">shield_person</span>
+                    <span className="truncate">Manage Moderators</span>
+                  </button>
+                </Link>
               </div>
             </div>
             <div className="grid grid-cols-1 gap-8 mt-8">
