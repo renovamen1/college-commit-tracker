@@ -23,23 +23,50 @@ export async function connectToDatabase() {
   }
 
   if (!cached.promise) {
+    // Enhanced connection options for Atlas compatibility
     const opts = {
       bufferCommands: false,
+      bufferMaxEntries: 0,
+      // Connection timeout settings
+      serverSelectionTimeoutMS: 10000, // 10 seconds
+      connectTimeoutMS: 15000, // 15 seconds
+      socketTimeoutMS: 45000, // 45 seconds
+      // Retry settings
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      maxIdleTimeMS: 30000,
+      // SSL settings for Atlas
+      ssl: true,
+      sslValidate: true,
+      retryWrites: true,
+      retryReads: true,
+      // Additional Atlas options
+      family: 4,
     }
 
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
-      console.log('Connected to MongoDB')
-      return mongoose
-    }).catch((error) => {
-      console.error('MongoDB connection error:', error)
-      throw error
-    })
+    console.log('🔄 Connecting to MongoDB (Mongoose)...')
+
+    cached.promise = mongoose.connect(MONGODB_URI!, opts)
+      .then((mongoose) => {
+        console.log('✅ Connected to MongoDB (Mongoose) - Ready for authentication!')
+        return mongoose
+      })
+      .catch((error) => {
+        console.error('❌ MongoDB connection error:', error.message)
+        console.error('🔧 Connection URI:', MONGODB_URI!.replace(/:([^:@]{4})[^:@]*@/, ':***@'))
+        console.error('💡 Troubleshooting:')
+        console.error('   • Check MongoDB Atlas network access (allow 0.0.0.0/0)')
+        console.error('   • Verify Atlas cluster is not paused')
+        console.error('   • Ensure database user has read/write access')
+        throw error
+      })
   }
 
   try {
     cached.conn = await cached.promise
   } catch (e) {
     cached.promise = null
+    console.error('❌ Failed to establish Mongoose connection:', e)
     throw e
   }
 

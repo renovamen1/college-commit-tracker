@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import clientPromise, { DATABASE_NAME } from '@/lib/mongodb'
+import { connectToDatabase } from '@/lib/database'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { RateLimiterMemory } from 'rate-limiter-flexible'
@@ -75,76 +75,117 @@ async function handleLogin(request: NextRequest) {
       )
     }
 
-    // Connect to database
-    const client = await clientPromise
-    const db = client.db(DATABASE_NAME)
+    // Ensure database connection is established
+    await connectToDatabase()
 
-    // For now, use simple authentication logic
-    // In production, you'd use the User model to find and verify the user
+    // Look up user by email/Github username (Mongoose handles the connection automatically)
+    // Support both email and GitHub username for login
+    const user = await User.findOne({
+      $or: [
+        { email: { $regex: new RegExp(`^${username}$`, 'i') } },
+        { githubUsername: username }
+      ],
+      isActive: true
+    }).select('+password').exec()
 
-    // Temporary authentication for demo - replace with proper User lookup
-    if (username === 'admin@codecommit.edu' && password === 'admin123') {
-      const userData = {
-        username,
-        role: 'admin',
-        lastLogin: new Date().toISOString(),
-        isActive: true
-      }
-
-      // Generate JWT token pair using new system
-      const tokenPair = createTokenPair(
-        'admin-user-id', // Replace with actual user ID from database
-        username,
-        'admin'
-      )
-
-      const response = NextResponse.json({
-        success: true,
-        message: 'Login successful',
-        data: {
-          user: {
-            username: userData.username,
-            role: userData.role
-          }
-        },
-        timestamp: new Date().toISOString(),
-        version: '1.0.0'
-      })
-
-      // Set secure authentication cookies
-      const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60 // 30 days or 1 day
-
-      response.cookies.set('admin_token', tokenPair.accessToken, {
-        httpOnly: true, // Prevent XSS access
-        secure: config.app.nodeEnv === 'production', // HTTPS only in production
-        sameSite: 'strict', // Prevent CSRF
-        maxAge,
-        path: '/'
-      })
-
-      response.cookies.set('admin_user', JSON.stringify({
-        username: userData.username,
-        role: userData.role
-      }), {
-        httpOnly: false, // Allow client-side access for UI
-        secure: config.app.nodeEnv === 'production',
-        sameSite: 'strict',
-        maxAge,
-        path: '/'
-      })
-
-      return response
-    } else {
+    // Check if user exists
+    if (!user) {
       return NextResponse.json({
         success: false,
-        message: 'Invalid username or password',
+        message: 'Invalid credentials',
         timestamp: new Date().toISOString(),
         version: '1.0.0'
       }, { status: 401 })
     }
 
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.password)
+    if (!isPasswordValid) {
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid credentials',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      }, { status: 401 })
+    }
+
+    // Check if user has admin role
+    if (user.role !== 'admin') {
+      return NextResponse.json({
+        success: false,
+        message: 'Access denied. Admin access required.',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      }, { status: 403 })
+    }
+
+    // Generate JWT token pair
+    const tokenPair = createTokenPair(
+      user._id.toString(),
+      user.githubUsername,
+      user.role
+    )
+
+    // Update last login time (optional)
+    await User.findByIdAndUpdate(user._id, {
+      lastSyncDate: new Date()
+    }).exec()
+
+    const response = NextResponse.json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        user: {
+          id: user._id,
+          email: user.email,
+          githubUsername: user.githubUsername,
+          name: user.name,
+          role: user.role
+        }
+      },
+      timestamp: new Date().toISOString(),
+      version: '1.0.0'
+    })
+
+    // Set secure authentication cookies
+    const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60 // 30 days or 1 day
+
+    response.cookies.set('admin_token', tokenPair.accessToken, {
+      httpOnly: true, // Prevent XSS access
+      secure: config.app.nodeEnv === 'production', // HTTPS only in production
+      sameSite: 'strict', // Prevent CSRF
+      maxAge,
+      path: '/'
+    })
+
+    response.cookies.set('admin_user', JSON.stringify({
+      id: user._id,
+      email: user.email,
+      githubUsername: user.githubUsername,
+      name: user.name,
+      role: user.role
+    }), {
+      httpOnly: false, // Allow client-side access for UI
+      secure: config.app.nodeEnv === 'production',
+      sameSite: 'strict',
+      maxAge,
+      path: '/'
+    })
+
+    // Set refresh token cookie for token renewal
+    response.cookies.set('admin_refresh_token', tokenPair.refreshToken, {
+      httpOnly: true,
+      secure: config.app.nodeEnv === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/'
+    })
+
+    return response
+
   } catch (error) {
-    return errorHandler(error, { endpoint: 'login' })
+    const errorResult = errorHandler(error as Error, { endpoint: 'login' })
+    return NextResponse.json(errorResult.response, { status: errorResult.statusCode })
   }
 }
 
