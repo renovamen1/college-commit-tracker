@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import clientPromise, { DATABASE_NAME } from '@/lib/mongodb'
-import Class from '@/lib/models/Class'
+import Class, { IClass } from '@/lib/models/Class'
 import User from '@/lib/models/User'
+import { connectToDatabase } from '@/lib/database'
 import { errorHandler } from '@/lib/middleware/errorHandler'
+import { ApiError } from '@/lib/types/api'
 import { validateBody, validateParams, validateRequestSize } from '@/lib/middleware/validation'
 import { globalRateLimiter } from '@/lib/middleware/rateLimit'
+import { UpdateClassSchema } from '@/lib/types/api'
+import { adminOnly } from '@/lib/middleware/auth'
 
 import config from '@/lib/config'
 
-export async function GET(
+async function handleGetClass(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -28,7 +32,7 @@ export async function GET(
     const db = client.db(DATABASE_NAME)
 
     // Find the class
-    const cls = await Class.findById(params.id).lean().exec()
+    const cls = await Class.findById(params.id).lean().exec() as unknown as IClass
     if (!cls) {
       return NextResponse.json({
         success: false,
@@ -69,7 +73,8 @@ export async function GET(
     })
 
   } catch (error) {
-    return errorHandler(error, { endpoint: 'classes/[id]', method: 'GET', classId: params.id })
+    const errorResult = errorHandler(error as Error | ApiError, { endpoint: 'classes/[id]', method: 'GET', classId: params.id })
+    return NextResponse.json(errorResult.response, { status: errorResult.statusCode })
   }
 }
 

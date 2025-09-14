@@ -7,8 +7,10 @@ import { validateBody, validateQuery, validateRequestSize } from '@/lib/middlewa
 import { globalRateLimiter } from '@/lib/middleware/rateLimit'
 import { PaginationSchema, CreateClassSchema, UpdateClassSchema } from '@/lib/types/api'
 import config from '@/lib/config'
+import { adminOnly } from '@/lib/middleware/auth'
+import { IClass } from '@/lib/models/Class'
 
-export async function GET(request: NextRequest) {
+async function handleGetClasses(request: NextRequest) {
   try {
     // Validate request size
     if (!validateRequestSize(request)) {
@@ -23,7 +25,8 @@ export async function GET(request: NextRequest) {
     // Validate query parameters
     const validationResult = validateQuery(request, PaginationSchema)
     if (!validationResult.success) {
-      return validationResult.error
+      const { response, statusCode } = validationResult.error as any
+      return NextResponse.json(response, { status: statusCode })
     }
 
     // Connect to database
@@ -40,7 +43,7 @@ export async function GET(request: NextRequest) {
       .skip(skip)
       .limit(limit)
       .lean()
-      .exec()
+      .exec() as unknown as IClass[]
 
     // Get student counts for each class
     const classIds = classes.map(cls => cls._id)
@@ -101,11 +104,12 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    return errorHandler(error, { endpoint: 'classes', method: 'GET' })
+    const errorResult = errorHandler(error as Error, { endpoint: 'classes', method: 'GET' })
+    return NextResponse.json(errorResult.response, { status: errorResult.statusCode })
   }
 }
 
-export async function POST(request: NextRequest) {
+async function handleCreateClass(request: NextRequest) {
   try {
     // Validate request size
     if (!validateRequestSize(request)) {
@@ -120,7 +124,8 @@ export async function POST(request: NextRequest) {
     // Validate request body with Zod schema
     const validationResult = await validateBody(request, CreateClassSchema, true)
     if (!validationResult.success) {
-      return validationResult.error
+      const { response, statusCode } = validationResult.error as any
+      return NextResponse.json(response, { status: statusCode })
     }
 
     // Connect to database
@@ -183,6 +188,11 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
 
   } catch (error) {
-    return errorHandler(error, { endpoint: 'classes', method: 'POST' })
+    const errorResult = errorHandler(error as Error, { endpoint: 'classes', method: 'POST' })
+    return NextResponse.json(errorResult.response, { status: errorResult.statusCode })
   }
 }
+
+// Export wrapped handlers with authentication middleware
+export const GET = adminOnly(handleGetClasses)
+export const POST = adminOnly(handleCreateClass)
