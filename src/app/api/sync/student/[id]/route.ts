@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectToDatabase } from '@/lib/database'
+import clientPromise, { DATABASE_NAME } from '@/lib/mongodb'
 import User from '@/lib/models/User'
-import { syncStudentCommits } from '../../../sync/route'
+import { errorHandler } from '@/lib/middleware/errorHandler'
+import { validateParams, validateRequestSize } from '@/lib/middleware/validation'
+import { globalRateLimiter } from '@/lib/middleware/rateLimit'
+import { z } from 'zod'
+import { syncStudentCommits } from '../../route'
+import config from '@/lib/config'
 
 /**
  * POST /api/sync/student/[id] - Sync individual student commits

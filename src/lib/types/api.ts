@@ -141,6 +141,16 @@ export const UpdateClassSchema = z.object({
   isActive: z.boolean().optional()
 })
 
+export const CreateDepartmentSchema = z.object({
+  name: z.string().min(2).max(100).trim(),
+  description: z.string().max(500).trim().optional()
+})
+
+export const UpdateDepartmentSchema = z.object({
+  name: z.string().min(2).max(100).trim().optional(),
+  description: z.string().max(500).trim().optional()
+})
+
 // Query Parameter Schemas
 export const PaginationSchema = z.object({
   page: z.string().regex(/^\d+$/).transform(val => parseInt(val)).refine(val => val > 0, 'Page must be greater than 0').optional(),

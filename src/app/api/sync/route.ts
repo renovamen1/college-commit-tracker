@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectToDatabase } from '@/lib/database'
+import clientPromise, { DATABASE_NAME } from '@/lib/mongodb'
 import User from '@/lib/models/User'
+import { errorHandler } from '@/lib/middleware/errorHandler'
+import { validateBody, validateQuery, validateRequestSize } from '@/lib/middleware/validation'
+import { globalRateLimiter } from '@/lib/middleware/rateLimit'
+import { z } from 'zod'
 import { getUserRepositories, getRepositoryCommits, validateGitHubUsername } from '@/lib/github'
+import config from '@/lib/config'
 
 // Types for sync operations
 interface SyncProgress {
@@ -142,27 +147,54 @@ async function syncStudentCommits(
  */
 export async function POST(request: NextRequest) {
   try {
-    await connectToDatabase()
+    // Validate request size
+    if (!validateRequestSize(request)) {
+      return NextResponse.json({
+        success: false,
+        message: 'Request too large',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      }, { status: 413 })
+    }
 
-    // Get sync parameters
-    const { batchSize = 10, dryRun = false } = await request.json().catch(() => ({}))
+    // Validate sync parameters
+    const syncParamsSchema = z.object({
+      batchSize: z.number().min(1).max(50).optional().default(10),
+      dryRun: z.boolean().optional().default(false)
+    })
+
+    const validationResult = await validateBody(request, syncParamsSchema, true)
+    if (!validationResult.success) {
+      return validationResult.error
+    }
+
+    // Connect to database
+    const client = await clientPromise
+    const db = client.db(DATABASE_NAME)
+
+    const { batchSize = 10, dryRun = false } = validationResult.data
 
     // Get all students
-    const students = await User.find({ role: 'student' }).select('_id githubUsername totalCommits lastSyncDate').exec()
+    const students = await User.find({ role: 'student', isActive: true })
+      .select('_id githubUsername totalCommits lastSyncDate')
+      .lean()
+      .exec()
 
     if (students.length === 0) {
       return NextResponse.json({
         success: true,
-        message: 'No students found to sync',
+        message: 'No active students found to sync',
         totalUsers: 0,
         successful: 0,
         failed: 0,
         processedUsers: [],
-        syncTime: 0
+        syncTime: 0,
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
       })
     }
 
-    const BATCH_SIZE = Math.min(batchSize, 50) // Max 50 to prevent overload
+    const BATCH_SIZE = batchSize // Already validated to be 1-50
     const results: Array<any> = []
     let processedCount = 0
     let successfulCount = 0
@@ -178,13 +210,9 @@ export async function POST(request: NextRequest) {
       // Process batch in parallel with controlled concurrency
       const batchPromises = batch.map(async (student, batchIndex) => {
         try {
-          const startTime = Date.now()
-
           const result = await syncStudentCommits(student, (step) => {
             console.log(`[${processedCount + batchIndex + 1}/${students.length}] ${step}`)
           })
-
-          const endTime = Date.now()
 
           if (result.success) {
             successfulCount++
@@ -213,7 +241,7 @@ export async function POST(request: NextRequest) {
             githubUsername: student.githubUsername,
             oldCommits: student.totalCommits || 0,
             newCommits: student.totalCommits || 0,
-            syncTime: Date.now() - Date.now(),
+            syncTime: 0,
             success: false,
             error: errorMessage
           }
@@ -238,7 +266,7 @@ export async function POST(request: NextRequest) {
     // Filter successful results for response
     const successfulResults = results.filter(result => result.success)
 
-    const responseData: SyncResult = {
+    const responseData: SyncResult & { timestamp: string; version: string } = {
       success: successfulCount > 0,
       syncTime: totalSyncTime,
       totalUsers: students.length,
@@ -253,7 +281,9 @@ export async function POST(request: NextRequest) {
           oldCommits: result.oldCommits,
           newCommits: result.newCommits,
           syncTime: result.syncTime
-        }))
+        })),
+      timestamp: new Date().toISOString(),
+      version: '1.0.0'
     }
 
     // Log sync summary
@@ -266,68 +296,124 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(responseData)
 
   } catch (error) {
-    console.error('Sync process failed:', error)
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error during sync process',
-        syncTime: 0,
-        totalUsers: 0,
-        successful: 0,
-        failed: 0,
-        processedUsers: [],
-        errors: [{ error: 'Process failed' }]
-      },
-      { status: 500 }
-    )
+    return errorHandler(error, { endpoint: 'sync', method: 'POST' })
   }
 }
 
 /**
  * GET /api/sync - Get sync status and recent sync history
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    await connectToDatabase()
+    // Validate request size
+    if (!validateRequestSize(request)) {
+      return NextResponse.json({
+        success: false,
+        message: 'Request too large',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      }, { status: 413 })
+    }
 
-    // Get recent sync statistics
+    // Connect to database
+    const client = await clientPromise
+    const db = client.db(DATABASE_NAME)
+
+    // Get recent sync statistics with enhanced aggregation
     const [
       totalUsers,
       syncedUsers,
-      recentlySyncedUsers
+      recentlySyncedUsers,
+      syncMetrics
     ] = await Promise.all([
-      User.countDocuments({ role: 'student' }),
-      User.countDocuments({ role: 'student', lastSyncDate: { $exists: true } }),
-      User.find({ role: 'student', lastSyncDate: { $exists: true } })
+      User.countDocuments({ role: 'student', isActive: true }),
+      User.countDocuments({
+        role: 'student',
+        isActive: true,
+        lastSyncDate: { $exists: true, $ne: null }
+      }),
+      User.find({
+        role: 'student',
+        isActive: true,
+        lastSyncDate: { $exists: true, $ne: null }
+      })
         .select('name githubUsername totalCommits lastSyncDate updatedAt')
         .sort({ lastSyncDate: -1 })
         .limit(5)
-        .exec()
+        .lean()
+        .exec(),
+      User.aggregate([
+        {
+          $match: {
+            role: 'student',
+            isActive: true,
+            lastSyncDate: { $exists: true, $ne: null }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            avgSyncAge: {
+              $avg: {
+                $divide: [
+                  { $subtract: [new Date(), '$lastSyncDate'] },
+                  1000 * 60 * 60 // Convert to hours
+                ]
+              }
+            },
+            minSyncCommits: { $min: '$totalCommits' },
+            maxSyncCommits: { $max: '$totalCommits' },
+            latestSync: { $max: '$lastSyncDate' }
+          }
+        }
+      ]).exec()
     ])
 
+    const metrics = syncMetrics[0] || {
+      avgSyncAge: 0,
+      minSyncCommits: 0,
+      maxSyncCommits: 0,
+      latestSync: null
+    }
+
     const status = {
-      totalUsers,
-      syncedUsers,
-      unsyncedUsers: totalUsers - syncedUsers,
-      syncRate: totalUsers > 0 ? Math.round((syncedUsers / totalUsers) * 100) : 0,
-      lastSync: recentlySyncedUsers.length > 0 ? recentlySyncedUsers[0].lastSyncDate : null,
+      overview: {
+        totalUsers,
+        syncedUsers,
+        unsyncedUsers: totalUsers - syncedUsers,
+        syncRate: totalUsers > 0 ? Math.round((syncedUsers / totalUsers) * 100) : 0,
+        activeSyncRate: syncedUsers > 0 ? Math.round((metrics.avgSyncAge <= 24 ? syncedUsers : 0) / syncedUsers * 100) : 0
+      },
+      activity: {
+        lastSync: metrics.latestSync,
+        averageSyncAgeHours: Math.round(metrics.avgSyncAge * 100) / 100,
+        syncRange: {
+          minCommits: metrics.minSyncCommits || 0,
+          maxCommits: metrics.maxSyncCommits || 0
+        }
+      },
       recentSyncs: recentlySyncedUsers.map(user => ({
         id: user._id,
-        name: user.name,
+        name: user.name || user.githubUsername,
         githubUsername: user.githubUsername,
         totalCommits: user.totalCommits,
         lastSyncDate: user.lastSyncDate,
-        updatedAt: user.updatedAt
+        updatedAt: user.updatedAt,
+        syncAgeHours: user.lastSyncDate ?
+          Math.round((Date.now() - new Date(user.lastSyncDate).getTime()) / (1000 * 60 * 60) * 100) / 100 :
+          null
       }))
     }
 
-    return NextResponse.json(status)
+    return NextResponse.json({
+      success: true,
+      message: 'Sync status retrieved successfully',
+      data: status,
+      timestamp: new Date().toISOString(),
+      version: '1.0.0'
+    })
 
   } catch (error) {
-    console.error('Failed to get sync status:', error)
-    return NextResponse.json(
-      { error: 'Failed to retrieve sync status' },
-      { status: 500 }
-    )
+    return errorHandler(error, { endpoint: 'sync', method: 'GET' })
   }
 }

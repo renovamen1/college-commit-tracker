@@ -1,131 +1,283 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectToDatabase } from '@/lib/database'
+import clientPromise, { DATABASE_NAME } from '@/lib/mongodb'
 import User from '@/lib/models/User'
 import Class from '@/lib/models/Class'
+import { errorHandler } from '@/lib/middleware/errorHandler'
+import { validateBody, validateQuery, validateRequestSize } from '@/lib/middleware/validation'
+import { globalRateLimiter } from '@/lib/middleware/rateLimit'
+// Note: Adding Zod import directly
+import { z } from 'zod'
+import { PaginationSchema, CreateUserSchema, UpdateUserSchema } from '@/lib/types/api'
+import config from '@/lib/config'
 import { getUserTotalCommits, validateGitHubUsername } from '@/lib/github'
 
 export async function GET(request: NextRequest) {
   try {
-    await connectToDatabase()
-
-    const url = new URL(request.url)
-    const limit = parseInt(url.searchParams.get('limit') || '20')
-    const recent = url.searchParams.get('recent') === 'true'
-    const highCommits = url.searchParams.get('highCommits') === 'true'
-
-    let query = { role: 'student' }
-    let sort: any = {}
-
-    if (recent) {
-      // Last 10 students added
-      sort = { createdAt: -1 }
-    } else if (highCommits) {
-      // Students with highest commits
-      sort = { totalCommits: -1 }
-    } else {
-      // Default: all students
-      sort = { createdAt: -1 }
+    // Validate request size
+    if (!validateRequestSize(request)) {
+      return NextResponse.json({
+        success: false,
+        message: 'Request too large',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      }, { status: 413 })
     }
 
+    // Extended pagination schema with filtering options
+    const userQuerySchema = PaginationSchema.extend({
+      search: z.string().optional(),
+      sortBy: z.enum(['createdAt', 'totalCommits', 'githubUsername', 'name']).optional(),
+      sortOrder: z.enum(['asc', 'desc']).optional(),
+      role: z.enum(['admin', 'student']).optional(),
+      classId: z.string().optional(),
+      departmentId: z.string().optional()
+    })
+
+    // Note: Using z direct import since import statement is above
+    const queryValidation = await validateQuery(request, userQuerySchema as any)
+    if (!queryValidation.success) {
+      return queryValidation.error
+    }
+
+    // Connect to database
+    const client = await clientPromise
+    const db = client.db(DATABASE_NAME)
+
+    const {
+      limit = 50,
+      page = 1,
+      search,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      role = 'student',
+      classId,
+      departmentId
+    } = queryValidation.data
+
+    const skip = (page - 1) * limit
+
+    // Build MongoDB query
+    const query: any = { isActive: true }
+
+    if (role) query.role = role
+    if (classId) query.classId = classId
+    if (departmentId) query.departmentId = departmentId
+
+    // Add text search if provided
+    if (search) {
+      query.$or = [
+        { githubUsername: { $regex: search, $options: 'i' } },
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ]
+    }
+
+    // Build sort object
+    const sort: any = {}
+    sort[sortBy] = sortOrder === 'desc' ? -1 : 1
+
+    // Get users with pagination and populate class info
     const users = await User.find(query)
       .sort(sort)
+      .skip(skip)
       .limit(limit)
-      .populate('classId', 'name department')
-      .select('githubUsername name email totalCommits lastSyncDate createdAt')
+      .populate({
+        path: 'classId',
+        select: 'name code department',
+        populate: {
+          path: 'departmentId',
+          select: 'name'
+        }
+      })
+      .populate('departmentId', 'name')
+      .lean()
       .exec()
 
+    // Get total count for pagination
+    const totalCount = await User.countDocuments(query)
+
+    // Format response data
     const formattedUsers = users.map(user => ({
-      id: user._id.toString(),
+      id: user._id,
       githubUsername: user.githubUsername,
-      name: user.name || user.githubUsername,
+      name: user.name,
       email: user.email,
+      role: user.role,
       totalCommits: user.totalCommits,
       lastSyncDate: user.lastSyncDate,
+      isActive: user.isActive,
       createdAt: user.createdAt,
-      className: user.classId ? `${(user.classId as any).name} - ${(user.classId as any).department}` : null
+      updatedAt: user.updatedAt,
+      class: user.classId ? {
+        id: user.classId._id,
+        name: user.classId.name,
+        code: user.classId.code,
+        department: user.classId.department
+      } : null,
+      department: user.departmentId ? {
+        id: user.departmentId._id,
+        name: user.departmentId.name
+      } : null
     }))
 
-    return NextResponse.json({ users: formattedUsers })
+    return NextResponse.json({
+      success: true,
+      message: 'Users retrieved successfully',
+      data: {
+        users: formattedUsers,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+          totalItems: totalCount,
+          itemsPerPage: limit,
+          hasNextPage: page * limit < totalCount,
+          hasPrevPage: page > 1
+        },
+        filters: {
+          search: search || null,
+          role: role || null,
+          classId: classId || null,
+          departmentId: departmentId || null
+        }
+      },
+      timestamp: new Date().toISOString(),
+      version: '1.0.0'
+    })
 
   } catch (error) {
-    console.error('Error fetching users:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch users' },
-      { status: 500 }
-    )
+    return errorHandler(error, { endpoint: 'users', method: 'GET' })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    await connectToDatabase()
-
-    const body = await request.json()
-    const { githubUsername, name, email, classId } = body
-
-    if (!githubUsername) {
-      return NextResponse.json(
-        { error: 'GitHub username is required' },
-        { status: 400 }
-      )
+    // Validate request size
+    if (!validateRequestSize(request)) {
+      return NextResponse.json({
+        success: false,
+        message: 'Request too large',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      }, { status: 413 })
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ githubUsername }).exec()
+    // Validate and sanitize request body with Zod schema
+    const validationResult = await validateBody(request, CreateUserSchema, true)
+    if (!validationResult.success) {
+      return validationResult.error
+    }
+
+    // Connect to database
+    const client = await clientPromise
+    const db = client.db(DATABASE_NAME)
+
+    const userData = validationResult.data
+
+    // Check if GitHub username already exists
+    const existingUser = await User.findOne({
+      githubUsername: userData.githubUsername,
+      isActive: true
+    }).exec()
+
     if (existingUser) {
-      return NextResponse.json(
-        { error: 'User with this GitHub username already exists' },
-        { status: 409 }
-      )
+      return NextResponse.json({
+        success: false,
+        message: 'User with this GitHub username already exists',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      }, { status: 409 })
     }
 
-    // Validate GitHub username
-    const isValidGitHub = await validateGitHubUsername(githubUsername)
+    // Check if email already exists (case-insensitive)
+    const existingEmail = await User.findOne({
+      email: { $regex: new RegExp(`^${userData.email}$`, 'i') },
+      isActive: true
+    }).exec()
+
+    if (existingEmail) {
+      return NextResponse.json({
+        success: false,
+        message: 'User with this email address already exists',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      }, { status: 409 })
+    }
+
+    // Validate GitHub username with external service
+    const isValidGitHub = await validateGitHubUsername(userData.githubUsername)
     if (!isValidGitHub) {
-      return NextResponse.json(
-        { error: 'Invalid GitHub username' },
-        { status: 400 }
-      )
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid or non-existent GitHub username',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      }, { status: 400 })
     }
 
-    // Get initial commit count
+    // Get initial commit count from GitHub
     let initialCommits = 0
     try {
-      initialCommits = await getUserTotalCommits(githubUsername) || 0
+      initialCommits = await getUserTotalCommits(userData.githubUsername) || 0
     } catch (error) {
-      console.warn('Could not fetch initial commit count for', githubUsername)
+      console.warn('Could not fetch initial commit count for', userData.githubUsername)
     }
 
-    // Create new user
+    // Create new user with enhanced model
     const newUser = new User({
-      githubUsername,
-      name,
-      email,
-      role: 'student',
+      githubUsername: userData.githubUsername,
+      name: userData.name,
+      email: userData.email,
+      role: userData.role,
       totalCommits: initialCommits,
-      classId: classId || null,
-      lastSyncDate: new Date()
+      lastSyncDate: new Date(),
+      password: userData.password // Will be hashed by model middleware
     })
 
     const savedUser = await newUser.save()
 
-    return NextResponse.json({
-      message: 'Student added successfully',
-      user: {
-        id: savedUser._id.toString(),
-        githubUsername: savedUser.githubUsername,
-        name: savedUser.name,
-        email: savedUser.email,
-        totalCommits: savedUser.totalCommits,
-        createdAt: savedUser.createdAt
+    // If classId is provided, populate class information for response
+    let classInfo = null
+    if (userData.classId) {
+      try {
+        const classData = await Class.findById(userData.classId)
+          .select('name code department')
+          .lean().exec()
+        if (classData) {
+          classInfo = {
+            id: classData._id,
+            name: classData.name,
+            code: classData.code,
+            department: classData.department
+          }
+        }
+      } catch (classError) {
+        console.warn('Could not populate class information:', classError)
       }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'User created successfully',
+      data: {
+        user: {
+          id: savedUser._id,
+          githubUsername: savedUser.githubUsername,
+          name: savedUser.name,
+          email: savedUser.email,
+          role: savedUser.role,
+          totalCommits: savedUser.totalCommits,
+          lastSyncDate: savedUser.lastSyncDate,
+          isActive: savedUser.isActive,
+          createdAt: savedUser.createdAt,
+          updatedAt: savedUser.updatedAt,
+          class: classInfo
+        }
+      },
+      timestamp: new Date().toISOString(),
+      version: '1.0.0'
     }, { status: 201 })
 
   } catch (error) {
-    console.error('Error creating user:', error)
-    return NextResponse.json(
-      { error: 'Failed to create user' },
-      { status: 500 }
-    )
+    return errorHandler(error, { endpoint: 'users', method: 'POST' })
   }
 }

@@ -1,127 +1,192 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectToDatabase } from '@/lib/database'
+import clientPromise, { DATABASE_NAME } from '@/lib/mongodb'
 import Department from '@/lib/models/Department'
 import Class from '@/lib/models/Class'
+import User from '@/lib/models/User'
+import { errorHandler } from '@/lib/middleware/errorHandler'
+import { validateBody, validateQuery, validateRequestSize } from '@/lib/middleware/validation'
+import { globalRateLimiter } from '@/lib/middleware/rateLimit'
+import { z } from 'zod'
+import { PaginationSchema, CreateDepartmentSchema, UpdateDepartmentSchema } from '@/lib/types/api'
+import config from '@/lib/config'
 
 export async function GET(request: NextRequest) {
   try {
-    await connectToDatabase()
+    // Validate request size
+    if (!validateRequestSize(request)) {
+      return NextResponse.json({
+        success: false,
+        message: 'Request too large',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      }, { status: 413 })
+    }
 
-    const url = new URL(request.url)
-    const limit = parseInt(url.searchParams.get('limit') || '10')
-    const page = parseInt(url.searchParams.get('page') || '1')
-    const search = url.searchParams.get('search') || ''
+    // Extended pagination schema with search
+    const searchSchema = PaginationSchema.extend({
+      search: z.string().optional()
+    })
+
+    const validationResult = validateQuery(request, searchSchema)
+    if (!validationResult.success) {
+      return validationResult.error
+    }
+
+    // Connect to database
+    const client = await clientPromise
+    const db = client.db(DATABASE_NAME)
+
+    const {
+      limit = 10,
+      page = 1,
+      search = ''
+    } = validationResult.data
     const skip = (page - 1) * limit
 
     // Build search query
     const searchQuery = search
-      ? { name: { $regex: search, $options: 'i' } }
-      : {}
+      ? { name: { $regex: search, $options: 'i' }, isActive: true }
+      : { isActive: true }
 
     // Get departments with pagination
     const departments = await Department.find(searchQuery)
       .sort({ createdAt: -1 })
       .limit(limit)
       .skip(skip)
+      .lean()
       .exec()
 
     // Get total count for pagination
     const totalCount = await Department.countDocuments(searchQuery)
 
-    // For each department, get the actual classes and student counts
+    // For each department, get class and student details
     const departmentsWithDetails = await Promise.all(
       departments.map(async (dept) => {
+        // Get classes in this department
         const classesInDepartment = await Class.find({
-          department: dept.name
-        }).select('name studentCount').exec()
+          department: dept.name,
+          isActive: true
+        }).select('name code').lean().exec()
 
-        const totalStudents = await Class.aggregate([
-          { $match: { department: dept.name } },
+        // Calculate total students across all classes in department
+        const totalStudentsResult = await User.aggregate([
           {
             $lookup: {
-              from: 'users',
-              localField: '_id',
-              foreignField: 'classId',
-              as: 'students'
+              from: 'classes',
+              localField: 'classId',
+              foreignField: '_id',
+              as: 'class'
             }
           },
           {
-            $addFields: {
-              studentCount: { $size: '$students' }
+            $unwind: {
+              path: '$class',
+              preserveNullAndEmptyArrays: true
+            }
+          },
+          {
+            $match: {
+              role: 'student',
+              isActive: true,
+              'class.department': dept.name,
+              'class.isActive': true
             }
           },
           {
             $group: {
               _id: null,
-              totalStudents: { $sum: '$studentCount' }
+              studentCount: { $sum: 1 },
+              totalCommits: { $sum: '$totalCommits' }
             }
           }
-        ])
+        ]).exec()
 
-        const studentCount = totalStudents.length > 0 ? totalStudents[0].totalStudents : 0
+        const studentData = totalStudentsResult[0] || { studentCount: 0, totalCommits: 0 }
 
         return {
-          id: dept._id.toString(),
+          id: dept._id,
           name: dept.name,
           description: dept.description,
-          classes: classesInDepartment.map(cls => cls.name),
-          studentCount,
-          totalCommits: dept.totalCommits,
-          createdAt: dept.createdAt
+          classes: classesInDepartment.map(cls => ({
+            id: cls._id,
+            name: cls.name,
+            code: cls.code
+          })),
+          studentCount: studentData.studentCount,
+          totalCommits: studentData.totalCommits,
+          isActive: dept.isActive,
+          createdAt: dept.createdAt,
+          updatedAt: dept.updatedAt
         }
       })
     )
 
     return NextResponse.json({
-      departments: departmentsWithDetails,
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(totalCount / limit),
-        totalCount,
-        limit
-      }
+      success: true,
+      message: 'Departments retrieved successfully',
+      data: {
+        departments: departmentsWithDetails,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+          totalItems: totalCount,
+          itemsPerPage: limit,
+          hasNextPage: page * limit < totalCount,
+          hasPrevPage: page > 1
+        }
+      },
+      timestamp: new Date().toISOString(),
+      version: '1.0.0'
     })
 
   } catch (error) {
-    console.error('Error fetching departments:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch departments' },
-      { status: 500 }
-    )
+    return errorHandler(error, { endpoint: 'departments', method: 'GET' })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    await connectToDatabase()
-
-    const body = await request.json()
-    const { name, description } = body
-
-    if (!name || !name.trim()) {
-      return NextResponse.json(
-        { error: 'Department name is required' },
-        { status: 400 }
-      )
+    // Validate request size
+    if (!validateRequestSize(request)) {
+      return NextResponse.json({
+        success: false,
+        message: 'Request too large',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      }, { status: 413 })
     }
 
-    // Check if department already exists
+    // Validate request body with Zod schema
+    const validationResult = await validateBody(request, CreateDepartmentSchema, true)
+    if (!validationResult.success) {
+      return validationResult.error
+    }
+
+    // Connect to database
+    const client = await clientPromise
+    const db = client.db(DATABASE_NAME)
+
+    const departmentData = validationResult.data
+
+    // Check if department already exists (case-insensitive)
     const existingDepartment = await Department.findOne({
-      name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
+      name: { $regex: new RegExp(`^${departmentData.name.trim()}$`, 'i') },
+      isActive: true
     }).exec()
 
     if (existingDepartment) {
-      return NextResponse.json(
-        { error: 'A department with this name already exists' },
-        { status: 409 }
-      )
+      return NextResponse.json({
+        success: false,
+        message: 'A department with this name already exists',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      }, { status: 409 })
     }
 
     // Create new department
     const newDepartment = new Department({
-      name: name.trim(),
-      description: description?.trim() || '',
-      classes: [],
+      name: departmentData.name.trim(),
+      description: departmentData.description?.trim() || '',
       studentCount: 0,
       totalCommits: 0
     })
@@ -129,23 +194,26 @@ export async function POST(request: NextRequest) {
     const savedDepartment = await newDepartment.save()
 
     return NextResponse.json({
+      success: true,
       message: 'Department created successfully',
-      department: {
-        id: savedDepartment._id.toString(),
-        name: savedDepartment.name,
-        description: savedDepartment.description,
-        classes: savedDepartment.classes,
-        studentCount: savedDepartment.studentCount,
-        totalCommits: savedDepartment.totalCommits,
-        createdAt: savedDepartment.createdAt
-      }
+      data: {
+        department: {
+          id: savedDepartment._id,
+          name: savedDepartment.name,
+          description: savedDepartment.description,
+          classes: [],
+          studentCount: savedDepartment.studentCount,
+          totalCommits: savedDepartment.totalCommits,
+          isActive: savedDepartment.isActive,
+          createdAt: savedDepartment.createdAt,
+          updatedAt: savedDepartment.updatedAt
+        }
+      },
+      timestamp: new Date().toISOString(),
+      version: '1.0.0'
     }, { status: 201 })
 
   } catch (error) {
-    console.error('Error creating department:', error)
-    return NextResponse.json(
-      { error: 'Failed to create department' },
-      { status: 500 }
-    )
+    return errorHandler(error, { endpoint: 'departments', method: 'POST' })
   }
 }

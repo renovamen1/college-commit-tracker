@@ -1,44 +1,75 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectToDatabase } from '@/lib/database'
+import clientPromise, { DATABASE_NAME } from '@/lib/mongodb'
 import Class from '@/lib/models/Class'
 import User from '@/lib/models/User'
+import { errorHandler } from '@/lib/middleware/errorHandler'
+import { validateBody, validateParams, validateRequestSize } from '@/lib/middleware/validation'
+import { globalRateLimiter } from '@/lib/middleware/rateLimit'
+
+import config from '@/lib/config'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectToDatabase()
+    // Validate request size
+    if (!validateRequestSize(request)) {
+      return NextResponse.json({
+        success: false,
+        message: 'Request too large',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      }, { status: 413 })
+    }
 
-    const cls = await Class.findById(params.id).exec()
+    // Connect to database
+    const client = await clientPromise
+    const db = client.db(DATABASE_NAME)
+
+    // Find the class
+    const cls = await Class.findById(params.id).lean().exec()
     if (!cls) {
-      return NextResponse.json(
-        { error: 'Class not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({
+        success: false,
+        message: 'Class not found',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      }, { status: 404 })
     }
 
     // Get student count for this class
     const studentCount = await User.countDocuments({
       role: 'student',
-      classId: params.id
+      classId: params.id,
+      isActive: true
     }).exec()
 
     return NextResponse.json({
-      id: cls._id.toString(),
-      name: cls.name,
-      department: cls.department,
-      studentCount,
-      totalCommits: cls.totalCommits,
-      createdAt: cls.createdAt
+      success: true,
+      message: 'Class retrieved successfully',
+      data: {
+        class: {
+          id: cls._id,
+          name: cls.name,
+          code: cls.code,
+          department: cls.department,
+          academicYear: cls.academicYear,
+          semester: cls.semester,
+          studentCount,
+          totalCommits: cls.totalCommits,
+          githubRepo: cls.githubRepo,
+          isActive: cls.isActive,
+          createdAt: cls.createdAt,
+          updatedAt: cls.updatedAt
+        }
+      },
+      timestamp: new Date().toISOString(),
+      version: '1.0.0'
     })
 
   } catch (error) {
-    console.error('Error fetching class:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch class' },
-      { status: 500 }
-    )
+    return errorHandler(error, { endpoint: 'classes/[id]', method: 'GET', classId: params.id })
   }
 }
 
