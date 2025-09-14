@@ -8,8 +8,9 @@ import { validateQuery, validateRequestSize } from '@/lib/middleware/validation'
 import { globalRateLimiter } from '@/lib/middleware/rateLimit'
 import { z } from 'zod'
 import config from '@/lib/config'
+import { adminOnly } from '@/lib/middleware/auth'
 
-export async function GET(request: NextRequest) {
+async function handleGetStats(request: NextRequest) {
   try {
     // Validate request size
     if (!validateRequestSize(request)) {
@@ -30,14 +31,17 @@ export async function GET(request: NextRequest) {
     // Validate query parameters
     const validationResult = validateQuery(request, statsQuerySchema)
     if (!validationResult.success) {
-      return validationResult.error
+      const { response, statusCode } = validationResult.error as any
+      return NextResponse.json(response, { status: statusCode })
     }
 
     // Connect to database
     const client = await clientPromise
     const db = client.db(DATABASE_NAME)
 
-    const { timeframe = 'all', departmentId } = validationResult.data
+    const queryData = validationResult.data
+    const { timeframe = 'all', departmentId } = queryData
+    const defaultTimeframe = timeframe // Store for use in catch block
 
     // Calculate date filter based on timeframe
     let dateFilter = {}
@@ -162,10 +166,11 @@ export async function GET(request: NextRequest) {
     .exec()
 
     // Calculate active departments (have classes with students)
-    const activeDepartments = await Class.distinct('department', {
+    const activeDepartmentsArray = await Class.distinct('department', {
       isActive: true,
       studentCount: { $gt: 0 }
-    }).length
+    })
+    const activeDepartments = activeDepartmentsArray.length
 
     // Extract statistics with fallbacks
     const userMetrics = userStats[0] || {
@@ -246,6 +251,10 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    return errorHandler(error, { endpoint: 'stats', method: 'GET', timeframe: validationResult.data.timeframe })
+    const errorResult = errorHandler(error as Error, { endpoint: 'stats', method: 'GET', timeframe: 'all' })
+    return NextResponse.json(errorResult.response, { status: errorResult.statusCode })
   }
 }
+
+// Export wrapped handlers with authentication middleware
+export const GET = adminOnly(handleGetStats)

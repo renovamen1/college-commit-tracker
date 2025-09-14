@@ -8,8 +8,10 @@ import { validateBody, validateParams, validateRequestSize, ObjectIdSchema } fro
 import { globalRateLimiter } from '@/lib/middleware/rateLimit'
 import { UpdateDepartmentSchema } from '@/lib/types/api'
 import config from '@/lib/config'
+import { adminOnly } from '@/lib/middleware/auth'
+import { IDepartment } from '@/lib/models/Department'
 
-export async function GET(
+async function handleGetDepartment(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -29,7 +31,7 @@ export async function GET(
     const db = client.db(DATABASE_NAME)
 
     // Find department
-    const department = await Department.findById(params.id).lean().exec()
+    const department = await Department.findById(params.id).lean().exec() as unknown as IDepartment | null
     if (!department) {
       return NextResponse.json({
         success: false,

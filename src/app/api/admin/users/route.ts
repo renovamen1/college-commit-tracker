@@ -10,8 +10,9 @@ import { z } from 'zod'
 import { PaginationSchema, CreateUserSchema, UpdateUserSchema } from '@/lib/types/api'
 import config from '@/lib/config'
 import { getUserTotalCommits, validateGitHubUsername } from '@/lib/github'
+import { adminOnly } from '@/lib/middleware/auth'
 
-export async function GET(request: NextRequest) {
+async function handleGetUsers(request: NextRequest) {
   try {
     // Validate request size
     if (!validateRequestSize(request)) {
