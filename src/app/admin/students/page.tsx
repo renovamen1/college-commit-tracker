@@ -59,6 +59,7 @@ export default function UsersManagePage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [successMessage, setSuccessMessage] = useState('')
   const [showAddUserModal, setShowAddUserModal] = useState(false)
+  const [showProfileModal, setShowProfileModal] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -198,14 +199,36 @@ export default function UsersManagePage() {
                 <Link href="/admin/classes" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
                   Classes
                 </Link>
-                <button className="flex items-center justify-center rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700">
+                <button
+                  onClick={async () => {
+                    if (confirm('Are you sure you want to log out?')) {
+                      try {
+                        await fetch('/api/admin/login', {
+                          method: 'DELETE',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                        })
+                        localStorage.removeItem('admin_user')
+                        window.location.href = '/admin/login'
+                      } catch (error) {
+                        localStorage.removeItem('admin_user')
+                        window.location.href = '/admin/login'
+                      }
+                    }
+                  }}
+                  className="flex items-center justify-center rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+                >
                   Logout
                 </button>
-                <Link href="/profile" className="text-gray-400 hover:text-white">
+                <button
+                  onClick={() => setShowProfileModal(true)}
+                  className="text-gray-400 hover:text-white relative"
+                >
                   <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
                     <path d="M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40.31,185.66,25.08,212a8,8,0,1,0,13.84,8c18.1-31.31,47.69-48,80.08-48s61.98,16.69,80.08,48a8,8,0,0,0,13.84-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z"></path>
                   </svg>
-                </Link>
+                </button>
               </nav>
             </div>
           </header>
@@ -481,6 +504,100 @@ export default function UsersManagePage() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-900 opacity-75" />
+            </div>
+
+            <div className="inline-block w-full max-w-4xl overflow-hidden text-left align-bottom transition-all transform bg-gray-900 border border-gray-800 rounded-md shadow-xl sm:my-8 sm:align-middle">
+              <div className="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="flex items-center justify-between mb-8">
+                  <h1 className="text-white text-3xl font-bold mb-8">Moderator Profile & Privileges</h1>
+                  <button
+                    className="text-gray-400 hover:text-white text-sm font-medium transition-colors flex items-center gap-2"
+                    onClick={() => setShowProfileModal(false)}
+                  >
+                    <svg className="lucide lucide-x" fill="none" height="20" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M18 6 6 18" />
+                      <path d="m6 6 12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="bg-gray-950 border border-gray-800 rounded-lg shadow-lg">
+                  <div className="p-8">
+                    <div className="flex items-center gap-6 mb-8">
+                      <div className="relative">
+                        <img
+                          alt="Moderator Avatar"
+                          className="h-24 w-24 rounded-full border-4 border-gray-800"
+                          src="https://lh3.googleusercontent.com/a/ACg8ocJk_GZJpY5l7eQ4e7wZz3f4A8oY8j5eP8nI_FpYk9b=s96-c"
+                        />
+                        <div className="absolute bottom-0 right-0 bg-green-500 rounded-full h-5 w-5 border-2 border-gray-950"></div>
+                      </div>
+                      <div>
+                        <h2 className="text-white text-2xl font-bold">Jane Doe</h2>
+                        <p className="text-gray-400">jane.doe@university.edu</p>
+                        <p className="text-gray-500 text-sm mt-1">Role: Moderator</p>
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-white text-lg font-bold mb-4">Assigned Privileges</h3>
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2 text-gray-300">
+                          <span className="material-symbols-outlined text-green-500">check_circle</span>
+                          <span>Can manage users (Add, Edit, Suspend)</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-300">
+                          <span className="material-symbols-outlined text-green-500">check_circle</span>
+                          <span>Can manage content (Posts, Comments)</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-300">
+                          <span className="material-symbols-outlined text-red-500">cancel</span>
+                          <span>Cannot manage departments</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-300">
+                          <span className="material-symbols-outlined text-red-500">cancel</span>
+                          <span>Cannot manage classes</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-t border-gray-800 p-8 flex justify-end">
+                    <button
+                      onClick={async () => {
+                        setShowProfileModal(false)
+                        if (confirm('Are you sure you want to log out?')) {
+                          try {
+                            await fetch('/api/admin/login', {
+                              method: 'DELETE',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                            })
+                            localStorage.removeItem('admin_user')
+                            window.location.href = '/admin/login'
+                          } catch (error) {
+                            localStorage.removeItem('admin_user')
+                            window.location.href = '/admin/login'
+                          }
+                        }
+                      }}
+                      className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-md h-10 px-4 bg-red-600 text-white text-sm font-bold leading-normal tracking-[0.015em] transition-all hover:bg-red-700"
+                    >
+                      <span className="truncate">Logout</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
