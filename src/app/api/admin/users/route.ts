@@ -37,13 +37,15 @@ async function handleGetUsers(request: NextRequest) {
     // Note: Using z direct import since import statement is above
     const queryValidation = await validateQuery(request, userQuerySchema as any)
     if (!queryValidation.success) {
-      return queryValidation.error
+      const { response, statusCode } = queryValidation.error as any
+      return NextResponse.json(response, { status: statusCode })
     }
 
     // Connect to database
     const client = await clientPromise
     const db = client.db(DATABASE_NAME)
 
+    const queryData = queryValidation.data as any
     const {
       limit = 50,
       page = 1,
@@ -53,7 +55,7 @@ async function handleGetUsers(request: NextRequest) {
       role = 'student',
       classId,
       departmentId
-    } = queryValidation.data
+    } = queryData
 
     const skip = (page - 1) * limit
 
@@ -146,11 +148,20 @@ async function handleGetUsers(request: NextRequest) {
     })
 
   } catch (error) {
-    return errorHandler(error, { endpoint: 'users', method: 'GET' })
+    const errorResult = errorHandler(error as Error, { endpoint: 'users', method: 'GET' })
+    return NextResponse.json(errorResult.response, { status: errorResult.statusCode })
   }
 }
 
-export async function POST(request: NextRequest) {
+
+// Export wrapped handlers with authentication middleware
+export const GET = adminOnly(handleGetUsers)
+export const POST = adminOnly(async (request: NextRequest) => {
+  return handleCreateUser(request)
+})
+
+// Function declaration for POST handler
+async function handleCreateUser(request: NextRequest) {
   try {
     // Validate request size
     if (!validateRequestSize(request)) {
@@ -165,7 +176,8 @@ export async function POST(request: NextRequest) {
     // Validate and sanitize request body with Zod schema
     const validationResult = await validateBody(request, CreateUserSchema, true)
     if (!validationResult.success) {
-      return validationResult.error
+      const { response, statusCode } = validationResult.error as any
+      return NextResponse.json(response, { status: statusCode })
     }
 
     // Connect to database
@@ -236,25 +248,8 @@ export async function POST(request: NextRequest) {
 
     const savedUser = await newUser.save()
 
-    // If classId is provided, populate class information for response
-    let classInfo = null
-    if (userData.classId) {
-      try {
-        const classData = await Class.findById(userData.classId)
-          .select('name code department')
-          .lean().exec()
-        if (classData) {
-          classInfo = {
-            id: classData._id,
-            name: classData.name,
-            code: classData.code,
-            department: classData.department
-          }
-        }
-      } catch (classError) {
-        console.warn('Could not populate class information:', classError)
-      }
-    }
+    // Class assignment can be done later if needed
+    const classInfo = null // No classId in current schema
 
     return NextResponse.json({
       success: true,
@@ -279,6 +274,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
 
   } catch (error) {
-    return errorHandler(error, { endpoint: 'users', method: 'POST' })
+    const errorResult = errorHandler(error as Error, { endpoint: 'users', method: 'POST' })
+    return NextResponse.json(errorResult.response, { status: errorResult.statusCode })
   }
 }

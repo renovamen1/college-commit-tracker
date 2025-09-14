@@ -10,6 +10,7 @@ import { UpdateDepartmentSchema } from '@/lib/types/api'
 import config from '@/lib/config'
 import { adminOnly } from '@/lib/middleware/auth'
 import { IDepartment } from '@/lib/models/Department'
+import { ApiError } from '@/lib/types/api'
 
 async function handleGetDepartment(
   request: NextRequest,
@@ -31,7 +32,7 @@ async function handleGetDepartment(
     const db = client.db(DATABASE_NAME)
 
     // Find department
-    const department = await Department.findById(params.id).lean().exec() as unknown as IDepartment | null
+    const department = await Department.findById(params.id).lean().exec() as any
     if (!department) {
       return NextResponse.json({
         success: false,
@@ -107,14 +108,23 @@ async function handleGetDepartment(
     })
 
   } catch (error) {
-    return errorHandler(error, { endpoint: 'departments/[id]', method: 'GET', departmentId: params.id })
+    const errorResult = errorHandler(error as Error | ApiError, { endpoint: 'departments/[id]', method: 'GET', departmentId: params.id })
+    return NextResponse.json(errorResult.response, { status: errorResult.statusCode })
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+
+// Export wrapped handlers with authentication middleware
+export const GET = adminOnly(handleGetDepartment)
+export const PUT = adminOnly(async (request: NextRequest, context: any) =>
+  handleUpdateDepartment(request, context)
+)
+export const DELETE = adminOnly(async (request: NextRequest, context: any) =>
+  handleDeleteDepartment(request, context)
+)
+
+// Function declarations for the handlers that need refactoring
+async function handleUpdateDepartment(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // Validate request size
     if (!validateRequestSize(request)) {
@@ -129,7 +139,8 @@ export async function PUT(
     // Validate and sanitize request body
     const validationResult = await validateBody(request, UpdateDepartmentSchema, true)
     if (!validationResult.success) {
-      return validationResult.error
+      const { response, statusCode } = validationResult.error as any
+      return NextResponse.json(response, { status: statusCode })
     }
 
     // Connect to database
@@ -200,14 +211,12 @@ export async function PUT(
     })
 
   } catch (error) {
-    return errorHandler(error, { endpoint: 'departments/[id]', method: 'PUT', departmentId: params.id })
+    const errorResult = errorHandler(error as Error, { endpoint: 'departments/[id]', method: 'PUT', departmentId: params.id })
+    return NextResponse.json(errorResult.response, { status: errorResult.statusCode })
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+async function handleDeleteDepartment(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // Validate request size
     if (!validateRequestSize(request)) {
@@ -264,6 +273,7 @@ export async function DELETE(
     })
 
   } catch (error) {
-    return errorHandler(error, { endpoint: 'departments/[id]', method: 'DELETE', departmentId: params.id })
+    const errorResult = errorHandler(error as Error, { endpoint: 'departments/[id]', method: 'DELETE', departmentId: params.id })
+    return NextResponse.json(errorResult.response, { status: errorResult.statusCode })
   }
 }
