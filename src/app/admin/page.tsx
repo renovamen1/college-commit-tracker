@@ -77,13 +77,13 @@ export default function AdminDashboard() {
               <h1 className="text-white text-lg font-bold leading-normal">CodeCommit</h1>
             </div>
             <nav className="flex items-center gap-6">
-              <Link href="/admin" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
+              <Link href="/home" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
                 Dashboard
               </Link>
-              <Link href="/admin/leaderboard" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
+              <Link href="/home/leaderboard" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
                 Leaderboard
               </Link>
-              <Link href="/admin/classes" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
+              <Link href="/home/classes" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
                 Classes
               </Link>
                 <button
