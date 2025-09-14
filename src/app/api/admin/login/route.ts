@@ -10,6 +10,7 @@ import { withValidation } from '@/lib/middleware/validation'
 import { authRateLimiter } from '@/lib/middleware/rateLimit'
 import { validateRequestSize } from '@/lib/middleware/security'
 import { CreateUserSchema } from '@/lib/types/api'
+import { createTokenPair } from '@/lib/auth/jwt'
 
 // Rate limiter for login attempts
 const loginRateLimiter = new RateLimiterMemory({
@@ -90,19 +91,11 @@ async function handleLogin(request: NextRequest) {
         isActive: true
       }
 
-      // Generate JWT token
-      const token = jwt.sign(
-        {
-          userId: 'admin-user-id', // Replace with actual user ID from database
-          username: userData.username,
-          role: userData.role
-        },
-        config.jwt.secret,
-        {
-          expiresIn: rememberMe
-            ? config.jwt.refreshTokenExpires
-            : config.jwt.accessTokenExpires
-        }
+      // Generate JWT token pair using new system
+      const tokenPair = createTokenPair(
+        'admin-user-id', // Replace with actual user ID from database
+        username,
+        'admin'
       )
 
       const response = NextResponse.json({
@@ -121,7 +114,7 @@ async function handleLogin(request: NextRequest) {
       // Set secure authentication cookies
       const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60 // 30 days or 1 day
 
-      response.cookies.set('admin_token', token, {
+      response.cookies.set('admin_token', tokenPair.accessToken, {
         httpOnly: true, // Prevent XSS access
         secure: config.app.nodeEnv === 'production', // HTTPS only in production
         sameSite: 'strict', // Prevent CSRF

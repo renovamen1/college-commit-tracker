@@ -58,6 +58,7 @@ const config = {
   // JWT
   jwt: {
     secret: parsedEnv.data.JWT_SECRET,
+    refreshSecret: parsedEnv.data.JWT_SECRET + '_refresh', // Use different key for refresh
     accessTokenExpires: parsedEnv.data.JWT_ACCESS_TOKEN_EXPIRES,
     refreshTokenExpires: parsedEnv.data.JWT_REFRESH_TOKEN_EXPIRES,
   },
