@@ -1,10 +1,12 @@
 import mongoose, { Document, Schema } from 'mongoose'
+import bcrypt from 'bcryptjs'
 
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId
   githubUsername: string
   name?: string
   email?: string
+  password: string
   role: 'admin' | 'student'
   classId?: mongoose.Types.ObjectId
   departmentId?: mongoose.Types.ObjectId
@@ -98,6 +100,12 @@ const UserSchema: Schema<IUser> = new Schema({
     type: Date,
     required: false
   },
+  password: {
+    type: String,
+    required: false, // Make optional for admin creation scripts
+    select: false,   // Don't include in regular queries (security)
+    minlength: [8, 'Password must be at least 8 characters']
+  },
   isActive: {
     type: Boolean,
     default: true
@@ -121,21 +129,30 @@ UserSchema.index({ createdAt: -1 })
 UserSchema.index({ role: 1, isActive: 1 })
 UserSchema.index({ classId: 1, isActive: 1 })
 
-// Pre-save middleware for validation
+// Pre-save middleware for password hashing and validation
 UserSchema.pre('save', async function(next) {
-  // Validate that if classId is set, departmentId should also be set consistently
-  if (this.classId && this.departmentId) {
-    try {
+  try {
+    // Hash password if it's new or modified
+    if (this.isModified('password') && this.password) {
+      const saltRounds = 12
+      const hashedPassword = await bcrypt.hash(this.password, saltRounds)
+      this.password = hashedPassword
+    }
+
+    // Validate that if classId is set, departmentId should also be set consistently
+    if (this.classId && this.departmentId) {
       const Class = mongoose.model('Class')
       const classDoc = await Class.findById(this.classId)
       if (classDoc && classDoc.department !== this.departmentId.toString()) {
         next(new Error('Class and department must be consistent'))
+        return
       }
-    } catch (error: any) {
-      next(error)
     }
+
+    next()
+  } catch (error: any) {
+    next(error)
   }
-  next()
 })
 
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema)

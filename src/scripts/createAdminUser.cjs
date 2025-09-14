@@ -6,10 +6,10 @@ require('dotenv').config({ path: '.env.local' })
 async function createAdminUser() {
   // Default admin credentials - CHANGE THESE FOR PRODUCTION
   const adminData = {
-    githubUsername: 'admin',
-    email: 'admin@codecommit.edu',
+    githubUsername: 'admin12',
+    email: 'admin12@codecommit.edu',
     name: 'Administrator',
-    password: 'prabin11', // Change this password!
+    password: 'prabin12', // Change this password!
     role: 'admin',
     totalCommits: 0,
     isActive: true,
@@ -85,7 +85,7 @@ async function createAdminUser() {
     console.log('✅ Admin user created successfully!')
     console.log('📧 Email:', adminData.email)
     console.log('🧑 Username:', adminData.githubUsername)
-    console.log('🔑 Password: admin123 (CHANGE THIS IMMEDIATELY)')
+    console.log('🔑 Password: change wala (CHANGE THIS IMMEDIATELY)')
     console.log('🆔 User ID:', savedUser._id)
     console.log()
     console.log('⚠️  IMPORTANT: Change the default password immediately after login!')

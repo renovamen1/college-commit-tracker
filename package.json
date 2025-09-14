@@ -14,7 +14,8 @@
     "type-check": "tsc --noEmit",
     "seed": "node src/scripts/seedData.cjs",
     "create-admin": "node src/scripts/createAdminUser.cjs",
-    "test-db": "node src/scripts/testConnection.cjs"
+    "test-db": "node src/scripts/testConnection.cjs",
+    "recreate-admin": "node src/scripts/recreateAdmin.cjs"
   },
   "dependencies": {
     "@octokit/rest": "^20.0.2",
