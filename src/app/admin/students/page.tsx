@@ -58,6 +58,16 @@ export default function UsersManagePage() {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [successMessage, setSuccessMessage] = useState('')
+  const [showAddUserModal, setShowAddUserModal] = useState(false)
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    githubUsername: '',
+    linkGithub: false,
+    role: 'Student',
+    password: '',
+    confirmPassword: ''
+  })
 
 
   const usersPerPage = 10
@@ -94,6 +104,31 @@ export default function UsersManagePage() {
   const showSuccessMessage = (message: string) => {
     setSuccessMessage(message)
     setTimeout(() => setSuccessMessage(''), 3000)
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type, checked } = e.target as any
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }))
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Handle form submission logic here
+    console.log('Creating user:', formData)
+    // Reset form and close modal
+    setFormData({
+      name: '',
+      email: '',
+      githubUsername: '',
+      linkGithub: false,
+      role: 'Student',
+      password: '',
+      confirmPassword: ''
+    })
+    setShowAddUserModal(false)
   }
 
   const handleDeleteUser = (userId: string) => {
@@ -197,7 +232,10 @@ export default function UsersManagePage() {
                     <span>Delete Selected ({selectedUsers.length})</span>
                   </button>
                 )}
-                <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-md h-12 px-6 bg-[var(--primary-color)] text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_2px_4px_rgba(0,0,0,0.1)] transition-all hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:ring-offset-2 focus:ring-offset-gray-900">
+                <button
+                  onClick={() => setShowAddUserModal(true)}
+                  className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-md h-12 px-6 bg-[var(--primary-color)] text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_2px_4px_rgba(0,0,0,0.1)] transition-all hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:ring-offset-2 focus:ring-offset-gray-900"
+                >
                   <span className="truncate">Add New User</span>
                 </button>
               </div>
@@ -295,6 +333,159 @@ export default function UsersManagePage() {
           </main>
         </div>
       </div>
+
+      {/* Add User Modal */}
+      {showAddUserModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-900 opacity-75"></div>
+            </div>
+
+            <div className="inline-block w-full max-w-2xl overflow-hidden text-left align-bottom transition-all transform bg-gray-900 border border-gray-800 rounded-md shadow-xl sm:my-8 sm:align-middle">
+              <div className="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="flex items-center justify-between mb-8">
+                  <h1 className="text-white tracking-light text-3xl font-bold leading-tight">Create New User</h1>
+                  <button
+                    className="text-gray-400 hover:text-white text-sm font-medium transition-colors flex items-center gap-2"
+                    onClick={() => setShowAddUserModal(false)}
+                  >
+                    <svg className="lucide lucide-x" fill="none" height="20" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M18 6 6 18" />
+                      <path d="m6 6 12 12" />
+                    </svg>
+                    <span>Cancel</span>
+                  </button>
+                </div>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-300">
+                      Full Name
+                    </label>
+                    <div className="mt-1">
+                      <input
+                        className="block w-full bg-gray-600 border-gray-700 rounded-md shadow-sm focus:ring-blue-600 focus:border-blue-600 sm:text-sm text-white py-3 px-4"
+                        id="name"
+                        name="name"
+                        placeholder="e.g. Prabin Thakur"
+                        type="text"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-300">
+                      Email Address
+                    </label>
+                    <div className="mt-1">
+                      <input
+                        className="block w-full bg-gray-600 border-gray-700 rounded-md shadow-sm focus:ring-blue-600 focus:border-blue-600 sm:text-sm text-white py-3 px-4"
+                        id="email"
+                        name="email"
+                        placeholder="you@example.com"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                      />
+                      <p className="mt-2 text-xs text-red-500 hidden">Please enter a valid email address.</p>
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="github-username" className="block text-sm font-medium text-gray-300">
+                      GitHub Username
+                    </label>
+                    <div className="mt-1 flex rounded-md shadow-sm">
+                      <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-600 bg-gray-700 text-gray-400 sm:text-sm">
+                        github.com/
+                      </span>
+                      <input
+                        className="flex-1 min-w-0 block w-full px-3 py-3 rounded-none rounded-r-md bg-gray-600 border-gray-700 focus:ring-blue-600 focus:border-blue-600 sm:text-sm text-white"
+                        id="github-username"
+                        name="githubUsername"
+                        placeholder="your-username"
+                        type="text"
+                        value={formData.githubUsername}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div className="mt-2 flex items-center">
+                      <input
+                        className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-blue-600"
+                        id="link-github"
+                        name="linkGithub"
+                        type="checkbox"
+                        checked={formData.linkGithub}
+                        onChange={handleInputChange}
+                      />
+                      <label htmlFor="link-github" className="ml-2 block text-sm text-gray-400">
+                        Link GitHub account now
+                      </label>
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="role" className="block text-sm font-medium text-gray-300">
+                      Role
+                    </label>
+                    <select
+                      className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 py-3 pl-3 pr-10 text-base text-white focus:border-blue-600 focus:outline-none focus:ring-blue-600 sm:text-sm"
+                      id="role"
+                      name="role"
+                      value={formData.role}
+                      onChange={handleInputChange}
+                    >
+                      <option>Student</option>
+                      <option>Admin</option>
+                      <option>Instructor</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-300">
+                      Password
+                    </label>
+                    <div className="mt-1">
+                      <input
+                        className="block w-full bg-gray-600 border-gray-700 rounded-md shadow-sm focus:ring-blue-600 focus:border-blue-600 sm:text-sm text-white py-3 px-4"
+                        id="password"
+                        name="password"
+                        placeholder="••••••••"
+                        type="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-300">
+                      Confirm Password
+                    </label>
+                    <div className="mt-1">
+                      <input
+                        className="block w-full bg-gray-600 border-gray-700 rounded-md shadow-sm focus:ring-blue-600 focus:border-blue-600 sm:text-sm text-white py-3 px-4"
+                        id="confirm-password"
+                        name="confirmPassword"
+                        placeholder="••••••••"
+                        type="password"
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                      />
+                      <p className="mt-2 text-xs text-red-500 hidden">Passwords do not match.</p>
+                    </div>
+                  </div>
+                  <div className="pt-4">
+                    <button
+                      className="flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-3 px-4 text-base font-bold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-blue-600"
+                      type="submit"
+                    >
+                      Create User Account
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
