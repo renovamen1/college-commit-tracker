@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs')
-const { MongoClient } = require('mongodb')
+const mongoose = require('mongoose')
 require('dotenv').config({ path: '.env.local' })
 
 // Admin user creation script for initial setup
@@ -38,18 +38,28 @@ async function createAdminUser() {
     process.exit(1)
   }
 
-  let client
-
   try {
-    console.log('🔄 Connecting to MongoDB...')
-    client = new MongoClient(MONGODB_URI)
-    await client.connect()
+    console.log('🔄 Connecting to MongoDB with Mongoose...')
 
-    console.log('✅ Connected successfully')
-    const db = client.db(DATABASE_NAME)
+    // Set connection options optimized for Atlas
+    const connectionOptions = {
+      serverSelectionTimeoutMS: 10000,
+      connectTimeoutMS: 15000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      maxIdleTimeMS: 30000
+    }
+
+    // Connect using Mongoose
+    await mongoose.connect(MONGODB_URI, connectionOptions)
+    console.log('✅ Mongoose connected successfully')
+
+    // Load User model
+    const User = require('../lib/models/User').default || require('../lib/models/User')
 
     // Check if admin user already exists
-    const existingAdmin = await db.collection('users').findOne({
+    const existingAdmin = await User.findOne({
       role: 'admin',
       isActive: true
     })
@@ -67,26 +77,30 @@ async function createAdminUser() {
     const hashedPassword = await bcrypt.hash(adminData.password, 12)
     adminData.password = hashedPassword
 
-    // Create the admin user
+    // Create the admin user using Mongoose model
     console.log('👤 Creating admin user...')
-    const result = await db.collection('users').insertOne(adminData)
+    const newUser = new User(adminData)
+    const savedUser = await newUser.save()
 
     console.log('✅ Admin user created successfully!')
     console.log('📧 Email:', adminData.email)
     console.log('🧑 Username:', adminData.githubUsername)
     console.log('🔑 Password: admin123 (CHANGE THIS IMMEDIATELY)')
-    console.log('🆔 User ID:', result.insertedId)
+    console.log('🆔 User ID:', savedUser._id)
     console.log()
     console.log('⚠️  IMPORTANT: Change the default password immediately after login!')
     console.log('   Go to /admin and change password in user management section.')
+    console.log()
+    console.log('💡 Login URL: http://localhost:3002/admin/login')
 
   } catch (error) {
     console.error('❌ Error creating admin user:', error.message)
     process.exit(1)
   } finally {
-    if (client) {
-      await client.close()
-      console.log('🔌 Database connection closed')
+    if (mongoose.connection.readyState === 1) {
+      console.log('🔌 Closing Mongoose connection...')
+      await mongoose.connection.close()
+      console.log('✅ Mongoose connection closed')
     }
   }
 }
