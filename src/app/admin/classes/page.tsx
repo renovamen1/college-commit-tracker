@@ -50,9 +50,59 @@ const mockClasses: ClassItem[] = [
 ]
 
 export default function ClassesManagePage() {
-  const [classes] = useState<ClassItem[]>(mockClasses)
+  const [classes, setClasses] = useState<ClassItem[]>(mockClasses)
   const [searchTerm, setSearchTerm] = useState('')
   const [showProfileModal, setShowProfileModal] = useState(false)
+  const [showAddClassModal, setShowAddClassModal] = useState(false)
+
+  const [classForm, setClassForm] = useState({
+    name: '',
+    department: 'Computer Science',
+    academicYear: '',
+    studentCount: '',
+    githubRepo: ''
+  })
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setClassForm(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const handleSubmitClass = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // Basic validation
+    if (!classForm.name.trim() || !classForm.academicYear.trim()) {
+      alert('Please fill in all required fields (Class Name and Academic Year)')
+      return
+    }
+
+    // Create new class
+    const newClass: ClassItem = {
+      id: Date.now().toString(),
+      name: classForm.name,
+      department: classForm.department,
+      students: parseInt(classForm.studentCount) || 0
+    }
+
+    setClasses(prev => [newClass, ...prev])
+
+    // Reset form and close modal
+    setClassForm({
+      name: '',
+      department: 'Computer Science',
+      academicYear: '',
+      studentCount: '',
+      githubRepo: ''
+    })
+    setShowAddClassModal(false)
+
+    // Show success message
+    alert('Class created successfully!')
+  }
 
   const filteredClasses = classes.filter(cls =>
     cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -143,7 +193,10 @@ export default function ClassesManagePage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                <button className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-[var(--primary-color)] text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_2px_4px_rgba(0,0,0,0.1)] transition-all hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:ring-offset-2 focus:ring-offset-gray-900">
+                <button
+                  onClick={() => setShowAddClassModal(true)}
+                  className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-[var(--primary-color)] text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_2px_4px_rgba(0,0,0,0.1)] transition-all hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:ring-offset-2 focus:ring-offset-gray-900"
+                >
                   <span className="material-symbols-outlined">add</span>
                   <span className="truncate">Add New Class</span>
                 </button>
@@ -204,6 +257,218 @@ export default function ClassesManagePage() {
           </main>
         </div>
       </div>
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-900 opacity-75" />
+            </div>
+
+            <div className="inline-block w-full max-w-4xl overflow-hidden text-left align-bottom transition-all transform bg-gray-900 border border-gray-800 rounded-md shadow-xl sm:my-8 sm:align-middle">
+              <div className="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="flex items-center justify-between mb-8">
+                  <h1 className="text-white text-3xl font-bold mb-8">Moderator Profile & Privileges</h1>
+                  <button
+                    className="text-gray-400 hover:text-white text-sm font-medium transition-colors flex items-center gap-2"
+                    onClick={() => setShowProfileModal(false)}
+                  >
+                    <svg className="lucide lucide-x" fill="none" height="20" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M18 6 6 18" />
+                      <path d="m6 6 12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="bg-gray-950 border border-gray-800 rounded-lg shadow-lg">
+                  <div className="p-8">
+                    <div className="flex items-center gap-6 mb-8">
+                      <div className="relative">
+                        <img
+                          alt="Moderator Avatar"
+                          className="h-24 w-24 rounded-full border-4 border-gray-800"
+                          src="https://lh3.googleusercontent.com/a/ACg8ocJk_GZJpY5l7eQ4e7wZz3f4A8oY8j5eP8nI_FpYk9b=s96-c"
+                        />
+                        <div className="absolute bottom-0 right-0 bg-green-500 rounded-full h-5 w-5 border-2 border-gray-950"></div>
+                      </div>
+                      <div>
+                        <h2 className="text-white text-2xl font-bold">Jane Doe</h2>
+                        <p className="text-gray-400">jane.doe@university.edu</p>
+                        <p className="text-gray-500 text-sm mt-1">Role: Moderator</p>
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-white text-lg font-bold mb-4">Assigned Privileges</h3>
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2 text-gray-300">
+                          <span className="material-symbols-outlined text-green-500">check_circle</span>
+                          <span>Can manage users (Add, Edit, Suspend)</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-300">
+                          <span className="material-symbols-outlined text-green-500">check_circle</span>
+                          <span>Can manage content (Posts, Comments)</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-300">
+                          <span className="material-symbols-outlined text-red-500">cancel</span>
+                          <span>Cannot manage departments</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-300">
+                          <span className="material-symbols-outlined text-red-500">cancel</span>
+                          <span>Cannot manage classes</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-t border-gray-800 p-8 flex justify-end">
+                    <button
+                      onClick={async () => {
+                        setShowProfileModal(false)
+                        if (confirm('Are you sure you want to log out?')) {
+                          try {
+                            await fetch('/api/admin/login', {
+                              method: 'DELETE',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                            })
+                            localStorage.removeItem('admin_user')
+                            window.location.href = '/admin/login'
+                          } catch (error) {
+                            localStorage.removeItem('admin_user')
+                            window.location.href = '/admin/login'
+                          }
+                        }
+                      }}
+                      className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-md h-10 px-4 bg-red-600 text-white text-sm font-bold leading-normal tracking-[0.015em] transition-all hover:bg-red-700"
+                    >
+                      <span className="truncate">Logout</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Class Modal */}
+      {showAddClassModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-900 opacity-75" />
+            </div>
+
+            <div className="inline-block w-full max-w-2xl overflow-hidden text-left align-bottom transition-all transform bg-gray-900 border border-gray-800 rounded-md shadow-xl sm:my-8 sm:align-middle">
+              <div className="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="flex items-center justify-between mb-8">
+                  <h1 className="text-white text-3xl font-bold mb-8">Add New Class</h1>
+                  <button
+                    className="text-gray-400 hover:text-white text-sm font-medium transition-colors flex items-center gap-2"
+                    onClick={() => setShowAddClassModal(false)}
+                  >
+                    <svg className="lucide lucide-x" fill="none" height="20" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M18 6 6 18" />
+                      <path d="m6 6 12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="text-gray-400 text-sm font-medium mb-2 block" htmlFor="class-name">Class Name</label>
+                    <input
+                      className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 rounded-md py-2 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      id="class-name"
+                      name="name"
+                      placeholder="e.g., CS101: Intro to Computer Science"
+                      type="text"
+                      value={classForm.name}
+                      onChange={handleFormChange}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-gray-400 text-sm font-medium mb-2 block" htmlFor="department">Department</label>
+                      <select
+                        className="bg-gray-800 border-gray-700 text-white rounded-md py-2 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        id="department"
+                        name="department"
+                        value={classForm.department}
+                        onChange={handleFormChange}
+                      >
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="Mathematics">Mathematics</option>
+                        <option value="Physics">Physics</option>
+                        <option value="English">English</option>
+                        <option value="History">History</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-gray-400 text-sm font-medium mb-2 block" htmlFor="academic-year">Academic Year</label>
+                      <input
+                        className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 rounded-md py-2 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        id="academic-year"
+                        name="academicYear"
+                        placeholder="e.g., 2024-2025"
+                        type="text"
+                        value={classForm.academicYear}
+                        onChange={handleFormChange}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-gray-400 text-sm font-medium mb-2 block" htmlFor="students">Expected Number of Students</label>
+                    <input
+                      className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 rounded-md py-2 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      id="students"
+                      name="studentCount"
+                      placeholder="e.g., 120"
+                      type="number"
+                      value={classForm.studentCount}
+                      onChange={handleFormChange}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-gray-400 text-sm font-medium mb-2 block">GitHub Repository</label>
+                    <div className="bg-gray-800 border border-gray-700 rounded-md p-4">
+                      <div className="flex items-center gap-4">
+                        <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                        </svg>
+                        <input
+                          className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 rounded-md py-2 px-4 flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          name="githubRepo"
+                          placeholder="https://github.com/your-org/repo-name"
+                          type="text"
+                          value={classForm.githubRepo}
+                          onChange={handleFormChange}
+                        />
+                      </div>
+                      <p className="text-gray-500 text-xs mt-2">Link to an existing repository or leave blank to create a new one.</p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-4 pt-4">
+                    <button
+                      onClick={() => setShowAddClassModal(false)}
+                      className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-gray-700 text-white text-base font-medium leading-normal tracking-[0.015em] transition-all hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                    >
+                      <span className="truncate">Cancel</span>
+                    </button>
+                    <button
+                      onClick={handleSubmitClass}
+                      className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-12 px-6 bg-[var(--primary-color)] text-white text-base font-bold leading-normal tracking-[0.015em] shadow-[0_1px_2px_rgba(0,0,0,0.05),0_2px_4px_rgba(0,0,0,0.1)] transition-all hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:ring-offset-2 focus:ring-offset-gray-900"
+                    >
+                      <span className="truncate">Create Class</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Profile Modal */}
       {showProfileModal && (
