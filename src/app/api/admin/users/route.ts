@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import clientPromise, { DATABASE_NAME } from '@/lib/mongodb'
+import { connectToDatabase } from '@/lib/database'
 import User from '@/lib/models/User'
 import Class from '@/lib/models/Class'
 import { errorHandler } from '@/lib/middleware/errorHandler'
@@ -41,9 +41,8 @@ async function handleGetUsers(request: NextRequest) {
       return NextResponse.json(response, { status: statusCode })
     }
 
-    // Connect to database
-    const client = await clientPromise
-    const db = client.db(DATABASE_NAME)
+    // Connect to database (Mongoose handles this automatically)
+    await connectToDatabase()
 
     const queryData = queryValidation.data as any
     const {
@@ -180,9 +179,8 @@ async function handleCreateUser(request: NextRequest) {
       return NextResponse.json(response, { status: statusCode })
     }
 
-    // Connect to database
-    const client = await clientPromise
-    const db = client.db(DATABASE_NAME)
+    // Connect to database (Mongoose handles this automatically)
+    await connectToDatabase()
 
     const userData = validationResult.data
 

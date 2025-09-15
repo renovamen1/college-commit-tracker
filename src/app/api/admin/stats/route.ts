@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import clientPromise, { DATABASE_NAME } from '@/lib/mongodb'
+import { connectToDatabase } from '@/lib/database'
 import User from '@/lib/models/User'
 import Class from '@/lib/models/Class'
 import Department from '@/lib/models/Department'
@@ -35,9 +35,8 @@ async function handleGetStats(request: NextRequest) {
       return NextResponse.json(response, { status: statusCode })
     }
 
-    // Connect to database
-    const client = await clientPromise
-    const db = client.db(DATABASE_NAME)
+    // Connect to database (Mongoose handles this automatically)
+    await connectToDatabase()
 
     const queryData = validationResult.data
     const { timeframe = 'all', departmentId } = queryData

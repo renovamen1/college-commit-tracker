@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import clientPromise, { DATABASE_NAME } from '@/lib/mongodb'
+import { connectToDatabase } from '@/lib/database'
 import Class from '@/lib/models/Class'
 import User from '@/lib/models/User'
 import { errorHandler } from '@/lib/middleware/errorHandler'
@@ -29,9 +29,8 @@ async function handleGetClasses(request: NextRequest) {
       return NextResponse.json(response, { status: statusCode })
     }
 
-    // Connect to database
-    const client = await clientPromise
-    const db = client.db(DATABASE_NAME)
+    // Connect to database (Mongoose handles this automatically)
+    await connectToDatabase()
 
     const limit = validationResult.data.limit || 50
     const page = validationResult.data.page || 1
@@ -128,9 +127,8 @@ async function handleCreateClass(request: NextRequest) {
       return NextResponse.json(response, { status: statusCode })
     }
 
-    // Connect to database
-    const client = await clientPromise
-    const db = client.db(DATABASE_NAME)
+    // Connect to database (Mongoose handles this automatically)
+    await connectToDatabase()
 
     const classData = validationResult.data
 

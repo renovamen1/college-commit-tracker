@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import clientPromise, { DATABASE_NAME } from '@/lib/mongodb'
+import { connectToDatabase } from '@/lib/database'
 import Class, { IClass } from '@/lib/models/Class'
 import User from '@/lib/models/User'
-import { connectToDatabase } from '@/lib/database'
 import { errorHandler } from '@/lib/middleware/errorHandler'
 import { ApiError } from '@/lib/types/api'
 import { validateBody, validateParams, validateRequestSize } from '@/lib/middleware/validation'
@@ -27,9 +26,8 @@ async function handleGetClass(
       }, { status: 413 })
     }
 
-    // Connect to database
-    const client = await clientPromise
-    const db = client.db(DATABASE_NAME)
+    // Connect to database (Mongoose handles this automatically)
+    await connectToDatabase()
 
     // Find the class
     const cls = await Class.findById(params.id).lean().exec() as unknown as IClass

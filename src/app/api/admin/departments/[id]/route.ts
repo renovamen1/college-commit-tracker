@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import clientPromise, { DATABASE_NAME } from '@/lib/mongodb'
+import { connectToDatabase } from '@/lib/database'
 import Department from '@/lib/models/Department'
 import Class from '@/lib/models/Class'
 import User from '@/lib/models/User'
@@ -27,9 +27,8 @@ async function handleGetDepartment(
       }, { status: 413 })
     }
 
-    // Connect to database
-    const client = await clientPromise
-    const db = client.db(DATABASE_NAME)
+    // Connect to database (Mongoose handles this automatically)
+    await connectToDatabase()
 
     // Find department
     const department = await Department.findById(params.id).lean().exec() as any
@@ -143,9 +142,8 @@ async function handleUpdateDepartment(request: NextRequest, { params }: { params
       return NextResponse.json(response, { status: statusCode })
     }
 
-    // Connect to database
-    const client = await clientPromise
-    const db = client.db(DATABASE_NAME)
+    // Connect to database (Mongoose handles this automatically)
+    await connectToDatabase()
 
     const departmentData = validationResult.data
 
@@ -228,9 +226,8 @@ async function handleDeleteDepartment(request: NextRequest, { params }: { params
       }, { status: 413 })
     }
 
-    // Connect to database
-    const client = await clientPromise
-    const db = client.db(DATABASE_NAME)
+    // Connect to database (Mongoose handles this automatically)
+    await connectToDatabase()
 
     // Check if department exists
     const department = await Department.findById(params.id).exec()
