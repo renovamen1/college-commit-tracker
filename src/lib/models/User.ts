@@ -102,9 +102,16 @@ const UserSchema: Schema<IUser> = new Schema({
   },
   password: {
     type: String,
-    required: false, // Make optional for admin creation scripts
-    select: false,   // Don't include in regular queries (security)
-    minlength: [8, 'Password must be at least 8 characters']
+    required: true, // 🚨 CHANGED TO TRUE - Critical fix!
+    // select: false,   // 💡 Keep disabled for debugging
+    minlength: [8, 'Password must be at least 8 characters'],
+    validate: {
+      validator: function(v: string): boolean {
+        console.log('🔧 Password validation:', v ? '[HIDDEN]' : 'undefined/null')
+        return Boolean(v && v.length >= 8)
+      },
+      message: 'Password must be at least 8 characters and not null'
+    }
   },
   isActive: {
     type: Boolean,
@@ -152,6 +159,17 @@ UserSchema.pre('save', async function(next) {
     next()
   } catch (error: any) {
     next(error)
+  }
+})
+
+// Post-save hook to MONITOR saved documents
+UserSchema.post('save', function(doc) {
+  console.log('✅ Document saved with ID:', doc._id?.toString())
+  console.log('✅ Saved document has password:', !!doc.password)
+  console.log('✅ Password length:', doc.password ? doc.password.length : 0)
+  console.log('✅ All fields in saved doc:', Object.keys(doc.toObject()).filter(key => key !== 'password'))
+  if (doc.password) {
+    console.log('✅ Password hash starts with:', doc.password.substring(0, 20) + '...')
   }
 })
 

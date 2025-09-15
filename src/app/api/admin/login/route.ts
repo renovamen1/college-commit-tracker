@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/database'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import mongoose from 'mongoose'
 import { RateLimiterMemory } from 'rate-limiter-flexible'
 import User from '@/lib/models/User'
 import config from '@/lib/config'
@@ -78,18 +79,18 @@ async function handleLogin(request: NextRequest) {
     // Ensure database connection is established
     await connectToDatabase()
 
-    // Look up user by email/Github username (Mongoose handles the connection automatically)
-    // Support both email and GitHub username for login
+    // Query user with password field explicitly selected
     const user = await User.findOne({
       $or: [
         { email: { $regex: new RegExp(`^${username}$`, 'i') } },
         { githubUsername: username }
       ],
       isActive: true
-    }).select('+password').exec()
+    }).select('+password').lean()
 
     // Check if user exists
     if (!user) {
+      console.log('🚫 LOGIN DEBUG: User not found, returning 401')
       return NextResponse.json({
         success: false,
         message: 'Invalid credentials',
@@ -98,9 +99,24 @@ async function handleLogin(request: NextRequest) {
       }, { status: 401 })
     }
 
+    // Check if password exists
+    if (!user.password) {
+      console.log('🚫 LOGIN DEBUG: User found but password is missing!')
+      return NextResponse.json({
+        success: false,
+        message: 'Account configuration error. Please contact administrator.',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      }, { status: 500 })
+    }
+
     // Verify password
+    console.log('🔐 LOGIN DEBUG: Attempting password verification')
     const isPasswordValid = await bcrypt.compare(password, user.password)
+    console.log('🔐 LOGIN DEBUG: Password verification result:', isPasswordValid)
+
     if (!isPasswordValid) {
+      console.log('🚫 LOGIN DEBUG: Password verification failed')
       return NextResponse.json({
         success: false,
         message: 'Invalid credentials',
@@ -108,6 +124,8 @@ async function handleLogin(request: NextRequest) {
         version: '1.0.0'
       }, { status: 401 })
     }
+
+    console.log('✅ LOGIN DEBUG: Password verification successful!')
 
     // Check if user has admin role
     if (user.role !== 'admin') {
