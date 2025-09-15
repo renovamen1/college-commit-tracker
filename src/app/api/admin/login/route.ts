@@ -79,8 +79,8 @@ async function handleLogin(request: NextRequest) {
     // Ensure database connection is established
     await connectToDatabase()
 
-    // Query user with password field explicitly selected
-    const user = await User.findOne({
+    // Query user with password field explicitly selected - properly typed
+    const user: any = await User.findOne({
       $or: [
         { email: { $regex: new RegExp(`^${username}$`, 'i') } },
         { githubUsername: username }
