@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import clientPromise, { DATABASE_NAME } from '@/lib/mongodb'
 import User from '@/lib/models/User'
+import { connectToDatabase } from '@/lib/database'
 import { errorHandler } from '@/lib/middleware/errorHandler'
-import { validateParams, validateRequestSize } from '@/lib/middleware/validation'
-import { globalRateLimiter } from '@/lib/middleware/rateLimit'
-import { z } from 'zod'
 import { syncStudentCommits } from '../../route'
-import config from '@/lib/config'
 
 /**
  * POST /api/sync/student/[id] - Sync individual student commits
@@ -120,7 +116,7 @@ export async function GET(
         totalCommits: user.totalCommits || 0,
         lastSyncDate,
         daysSinceLastSync,
-        needsSync: !lastSyncDate || daysSinceLastSync > 7, // Consider syncing if never synced or > 7 days
+        needsSync: !lastSyncDate || (daysSinceLastSync !== null && daysSinceLastSync > 7), // Consider syncing if never synced or > 7 days
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
       }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import clientPromise, { DATABASE_NAME } from '@/lib/mongodb'
+import { connectToDatabase } from '@/lib/database'
 import User from '@/lib/models/User'
 import { errorHandler } from '@/lib/middleware/errorHandler'
 import { validateBody, validateQuery, validateRequestSize } from '@/lib/middleware/validation'
@@ -107,7 +107,7 @@ async function syncStudentCommits(
     // Update user with new commit count
     const updatedCommits = oldCommitCount + newCommitCount
 
-    await User.findByIdAndUpdate(user._id, {
+    await User.findByIdAndUpdate((user as any)._id, {
       totalCommits: updatedCommits,
       lastSyncDate: new Date()
     })
@@ -115,7 +115,7 @@ async function syncStudentCommits(
     const syncTime = Date.now() - startTime
 
     return {
-      id: user._id.toString(),
+      id: (user as any)._id.toString(),
       githubUsername: user.githubUsername,
       oldCommits: oldCommitCount,
       newCommits: updatedCommits,
@@ -131,7 +131,7 @@ async function syncStudentCommits(
     console.error(`Sync failed for user @${user.githubUsername}:`, errorMessage)
 
     return {
-      id: user._id.toString(),
+      id: (user as any)._id.toString(),
       githubUsername: user.githubUsername,
       oldCommits: oldCommitCount,
       newCommits: oldCommitCount,
@@ -169,8 +169,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Connect to database
-    const client = await clientPromise
-    const db = client.db(DATABASE_NAME)
+    await connectToDatabase()
 
     const { batchSize = 10, dryRun = false } = validationResult.data
 
@@ -231,13 +230,13 @@ export async function POST(request: NextRequest) {
           failedCount++
           const errorMessage = error instanceof Error ? error.message : 'Unknown error'
           errors.push({
-            id: student._id.toString(),
+            id: (student as any)._id.toString(),
             githubUsername: student.githubUsername,
             error: errorMessage
           })
 
           return {
-            id: student._id.toString(),
+            id: (student as any)._id.toString(),
             githubUsername: student.githubUsername,
             oldCommits: student.totalCommits || 0,
             newCommits: student.totalCommits || 0,
@@ -296,7 +295,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(responseData)
 
   } catch (error) {
-    return errorHandler(error, { endpoint: 'sync', method: 'POST' })
+    return errorHandler(error as Error, { endpoint: 'sync', method: 'POST' })
   }
 }
 
@@ -316,8 +315,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Connect to database
-    const client = await clientPromise
-    const db = client.db(DATABASE_NAME)
+    await connectToDatabase()
 
     // Get recent sync statistics with enhanced aggregation
     const [
@@ -414,6 +412,8 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    return errorHandler(error, { endpoint: 'sync', method: 'GET' })
+    return errorHandler(error as Error, { endpoint: 'sync', method: 'GET' })
   }
 }
+
+export { syncStudentCommits }
