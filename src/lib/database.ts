@@ -18,11 +18,16 @@ if (!cached) {
 }
 
 export async function connectToDatabase() {
+  console.log('🔗 Attempting to connect to database...')
+
   if (cached.conn) {
+    console.log('✅ Using existing cached connection')
     return cached.conn
   }
 
   if (!cached.promise) {
+    console.log('🆕 Creating new database connection...')
+
     // Enhanced connection options for Atlas compatibility
     const opts = {
       bufferCommands: false,
@@ -64,6 +69,7 @@ export async function connectToDatabase() {
 
   try {
     cached.conn = await cached.promise
+    console.log('✅ Database connection established successfully')
   } catch (e) {
     cached.promise = null
     console.error('❌ Failed to establish Mongoose connection:', e)

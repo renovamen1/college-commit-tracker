@@ -109,7 +109,7 @@ export default function LandingPage() {
       <footer className="bg-[#111a22]/50 border-t border-[#233648]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <p className="text-center text-sm text-[var(--text-secondary)]">
-            © 2024 CommitTracker. A friendly, non-scaling project.
+            © 2024 CommitTracker.  friendly neighbourhood  project.
           </p>
         </div>
       </footer>

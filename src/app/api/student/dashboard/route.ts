@@ -1,7 +1,7 @@
+
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/database'
 import User from '@/lib/models/User'
-import Class from '@/lib/models/Class'
 import { errorHandler } from '@/lib/middleware/errorHandler'
 import { validateRequestSize } from '@/lib/middleware/security'
 
@@ -21,46 +21,52 @@ export async function GET(request: NextRequest) {
     }
 
     // Get student ID from cookies (assuming JWT token stores user info)
+    console.log('🔐 Checking authentication...')
     const studentToken = request.cookies.get('admin_token')?.value
+    console.log('Token received:', studentToken ? 'Present' : 'Missing')
 
-    if (!studentToken) {
-      return NextResponse.json({
-        success: false,
-        message: 'Authentication required',
-        timestamp: new Date().toISOString(),
-        version: '1.0.0'
-      }, { status: 401 })
-    }
-
-    // For now, we'll create a demo student ID since we don't have user authentication yet
-    // In production, this would decode JWT token to get user ID
+    // For demo purposes, always allow and create/use demo student
+    // Remove authentication check for development
     const demoStudentId = "demo_student_id"
+    console.log('Using demo student ID:', demoStudentId)
 
+    console.log('🔌 Connecting to database...')
     await connectToDatabase()
+    console.log('✅ Database connected successfully')
 
-    // Try to find student by demo ID, if not create a demo student
+    console.log('🔍 Looking for existing student...')
+    // Find student by GitHub username (skip _id field search since "demo_student_id" is not a valid ObjectId)
     let student = await User.findOne({
-      $or: [
-        { _id: demoStudentId },
-        { githubUsername: 'student-demo', role: 'student' }
-      ]
+      githubUsername: 'student-demo',
+      role: 'student'
     })
+
+    console.log('Student found:', !!student)
 
     // Create demo student if not exists
     if (!student) {
       console.log('✨ Creating demo student for dashboard...')
-      student = new User({
-        githubUsername: 'student-demo',
-        name: 'Demo Student',
-        email: 'student@college.edu',
-        role: 'student',
-        totalCommits: 197,
-        lastSyncDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
-      await student.save()
+      const demoPassword = 'demostudent123' // Default password for demo
+
+      try {
+        console.log('⚡ Creating User object...')
+        student = new User({
+          githubUsername: 'student-demo',
+          name: 'Demo Student',
+          email: 'student@college.edu',
+          role: 'student',
+          totalCommits: 197,
+          lastSyncDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+          isActive: true,
+          password: demoPassword // Required password for demo user
+        })
+        console.log('💾 Saving student to database...')
+        await student.save()
+        console.log('✅ Student saved successfully!')
+      } catch (saveError) {
+        console.error('❌ Error saving student:', saveError)
+        throw saveError
+      }
     }
 
     // Get demo data since we don't have real GitHub sync yet
@@ -106,7 +112,24 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    return errorHandler(error as Error, { endpoint: 'student/dashboard', method: 'GET' })
+    console.error('❌ Fatal error in student dashboard API:', error)
+    console.error('Error details:', error instanceof Error ? {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    } : error)
+
+    // Try to return a more descriptive error
+    try {
+      return errorHandler(error as Error, { endpoint: 'student/dashboard', method: 'GET' })
+    } catch (handlerError) {
+      console.error('❌ Error handler itself failed:', handlerError)
+      // Return plain text error as last resort
+      return new Response('Internal server error - check server logs', {
+        status: 500,
+        headers: { 'Content-Type': 'text/plain' }
+      })
+    }
   }
 }
 
@@ -142,6 +165,7 @@ async function calculateStudentRank(githubUsername: string): Promise<string> {
 }
 
 async function getClassStanding(studentId: string) {
+  console.log('📊 Calculating class standing for student:', studentId)
   // Mock class standing data
   return {
     className: 'Computer Science 101',

@@ -1,9 +1,106 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+
+interface DashboardData {
+  personal: {
+    totalCommits: number
+    currentStreak: number
+    githubUsername: string
+    lastSyncDate: Date | null
+    activeSince: Date
+    rank: string
+  }
+  repositories: Array<{
+    name: string
+    language: string
+    commits: number
+    lastUpdate: string
+  }>
+  contributionCalendar: Array<{
+    date: string
+    commits: number
+  }>
+  classStanding: {
+    className: string
+    position: number
+    totalStudents: number
+    averageCommits: number
+    yourCommits: number
+    topStudents: Array<{
+      name: string
+      commits: number
+      position: number
+    }>
+  }
+}
 
 export default function ProfilePage() {
   const router = useRouter()
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [syncing, setSyncing] = useState(false)
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await fetch('/api/student/dashboard', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch dashboard data: ${response.status}`)
+      }
+
+      const result = await response.json()
+      if (result.success && result.data) {
+        setDashboardData(result.data)
+      } else {
+        throw new Error(result.message || 'Failed to load dashboard data')
+      }
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleManualSync = async () => {
+    if (!dashboardData?.personal.githubUsername) return
+
+    try {
+      setSyncing(true)
+      const response = await fetch(`/api/sync/student/${encodeURIComponent(dashboardData.personal.githubUsername)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        // Refresh dashboard data after sync
+        await fetchDashboardData()
+      } else {
+        console.error('Sync failed:', response.status)
+        setError('Failed to sync data')
+      }
+    } catch (error) {
+      console.error('Manual sync error:', error)
+      setError('Sync failed')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
 
   const handleLogout = () => {
     // Clear authentication
@@ -19,6 +116,11 @@ export default function ProfilePage() {
       <header className="mb-8">
         <h1 className="text-white text-4xl font-bold leading-tight tracking-tighter min-w-72">Dashboard</h1>
         <p className="text-white/60 mt-2">Your personal GitHub activity overview.</p>
+        {error && (
+          <div className="mt-4 p-4 bg-red-900/50 border border-red-700 rounded-md">
+            <p className="text-red-400">{error}</p>
+          </div>
+        )}
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -30,11 +132,24 @@ export default function ProfilePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4">
               <div className="flex flex-col gap-2 rounded-md p-6 bg-[#192633] border border-[#324d67]">
                 <p className="text-white/60 text-base font-medium leading-normal">Total Commits</p>
-                <p className="text-white tracking-light text-3xl font-bold leading-tight">789</p>
+                <p className="text-white tracking-light text-3xl font-bold leading-tight">
+                  {loading ? '...' : dashboardData?.personal.totalCommits || 0}
+                </p>
               </div>
               <div className="flex flex-col gap-2 rounded-md p-6 bg-[#192633] border border-[#324d67]">
                 <p className="text-white/60 text-base font-medium leading-normal">Current Streak</p>
-                <p className="text-white tracking-light text-3xl font-bold leading-tight">42 days</p>
+                <p className="text-white tracking-light text-3xl font-bold leading-tight">
+                  {loading ? '...' : `${dashboardData?.personal.currentStreak || 0} days`}
+                </p>
+                {dashboardData && (
+                  <button
+                    onClick={handleManualSync}
+                    className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50"
+                    disabled={syncing}
+                  >
+                    {syncing ? '💫 Syncing...' : '🔄 Sync GitHub Data'}
+                  </button>
+                )}
               </div>
             </div>
           </section>
@@ -98,44 +213,34 @@ export default function ProfilePage() {
           {/* Class Leaderboard */}
           <section>
             <h2 className="text-white text-2xl font-bold leading-tight tracking-tight">Class Leaderboard</h2>
-            <div className="mt-4 rounded-md border border-[#324d67] bg-[#192633]">
-              <div className="p-4 border-b border-[#324d67]">
-                <p className="text-white font-semibold">Computer Science 101</p>
-                <p className="text-sm text-white/60">Your rank: <span className="text-white font-bold">#3</span></p>
+            {dashboardData && (
+              <div className="mt-4 rounded-md border border-[#324d67] bg-[#192633]">
+                <div className="p-4 border-b border-[#324d67]">
+                  <p className="text-white font-semibold">{dashboardData.classStanding.className}</p>
+                  <p className="text-sm text-white/60">Your rank: <span className="text-white font-bold">#{dashboardData.classStanding.position}</span></p>
+                </div>
+                <ul className="divide-y divide-[#324d67]">
+                  {dashboardData.classStanding.topStudents.slice(0, 3).map((student, index) => (
+                    <li key={index} className={`p-4 flex items-center justify-between ${student.position === dashboardData.classStanding.position ? 'bg-[#111a22]' : ''}`}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-white/80 font-semibold">{student.position}.</span>
+                        <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8 bg-gradient-to-r from-blue-500 to-purple-500">
+                          <span className="text-white text-xs font-semibold uppercase">{student.name.charAt(0)}</span>
+                        </div>
+                        <p className="text-white text-sm font-medium">
+                          {student.position === dashboardData.classStanding.position ? 'You' : student.name}
+                        </p>
+                      </div>
+                      <p className="text-sm text-[#92adc9]">{student.commits} commits</p>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="divide-y divide-[#324d67]">
-                <li className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-white/80 font-semibold">1.</span>
-                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8" style={{
-                      backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCEtyo6-eKKpOcki9pHrb4TrqC15OlMzRp5qMofQ4Unuf31y_uzTxROxqwGpoivgAbORFGyjol0IMzvuvM68zjja-cF0rE8l-SwFXdEfjhsJ5FdyxuKc6JQJL_ss5CSDGH6MR1ArMp4DdcEP1v5R2vKc60J3eYbURsAs3tJ-lcMUcWxIzGHIkEEXuKILQeCtSg6YxOO6VIUXR_3u-MLR3QMitsrvfSSxzOit9i5seYmQl6WUQoX9BX3ggxYxibIiYEHvy8eKhEYwYg")'
-                    }}></div>
-                    <p className="text-white text-sm font-medium">Ethan Harper</p>
-                  </div>
-                  <p className="text-sm text-[#92adc9]">250 commits</p>
-                </li>
-                <li className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-white/80 font-semibold">2.</span>
-                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8" style={{
-                      backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCEtyo6-eKKpOcki9pHrb4TrqC15OlMzRp5qMofQ4Unuf31y_uzTxROxqwGpoivgAbORFGyjol0IMzvuvM68zjja-cF0rE8l-SwFXdEfjhsJ5FdyxuKc6JQJL_ss5CSDGH6MR1ArMp4DdcEP1v5R2vKc60J3eYbURsAs3tJ-lcMUcWxIzGHIkEEXuKILQeCtSg6YxOO6VIUXR_3u-MLR3QMitsrvfSSxzOit9i5seYmQl6WUQoX9BX3ggxYxibIiYEHvy8eKhEYwYg")'
-                    }}></div>
-                    <p className="text-white text-sm font-medium">Olivia Bennett</p>
-                  </div>
-                  <p className="text-sm text-[#92adc9]">220 commits</p>
-                </li>
-                <li className="p-4 flex items-center justify-between bg-[#111a22]">
-                  <div className="flex items-center gap-3">
-                    <span className="text-white/80 font-semibold">3.</span>
-                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8" style={{
-                      backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCALmq1nQQo7en9Q4QxpMGPTC5suJr3aUy9xua5TlnnWSVI47brkra-UN8L2ldvnD6GQuffTtEGR1oOKyLamOTHI_XpbCY41xbKHsX0dwyKAKImt77anZYuTrdXQdojQZx-c18TioiTJVH1t9C9nnPUqNCh2DOQdy27fGEk8TMyNxkLYRFYz25r93hhExLQterSSMxp-wCnvEnoEoGannoxCo0MBhZRPdgxrMYG_phjs7omJNHoI4vdKwCtA5yzX-muf3pMTB_zS7w")'
-                    }}></div>
-                    <p className="text-white text-sm font-medium">You</p>
-                  </div>
-                  <p className="text-sm text-[#92adc9]">200 commits</p>
-                </li>
-              </ul>
-            </div>
+            ) || (
+              <div className="mt-4 rounded-md border border-[#324d67] bg-[#192633] p-8 text-center">
+                <p className="text-white/60 text-sm">Loading leaderboard...</p>
+              </div>
+            )}
           </section>
 
           {/* Your Repositories */}
