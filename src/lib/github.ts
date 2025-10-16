@@ -4,6 +4,9 @@ import { Repository, GitHubCommit } from '../types'
 const token = process.env.GITHUB_ACCESS_TOKEN
 const octokit = token ? new Octokit({ auth: token }) : new Octokit()
 
+// Log authentication status
+console.log(`🔑 GitHub API ${token ? 'authenticated' : 'unauthenticated'} (${token ? '5000 req/hour' : '60 req/hour'})`)
+
 // Helper function for retry logic
 async function retryWithBackoff<T>(
   fn: () => Promise<T>,
@@ -19,13 +22,17 @@ async function retryWithBackoff<T>(
       lastError = error
 
       // Check if it's a rate limit error
-      if (error.status === 403 && error.headers?.['x-ratelimit-remaining'] === '0') {
-        const resetTime = parseInt(error.headers['x-ratelimit-reset']) * 1000
-        const waitTime = resetTime - Date.now()
+      if (error.status === 403) {
+        // Check for rate limit in the error message
+        if (error.message?.includes('rate limit exceeded')) {
+          console.log(`❌ GitHub API rate limit exceeded (authenticated: ${!!token})`)
+          console.log(`💡 Authenticated requests: 5000/hour, Unauthenticated: 60/hour`)
+          console.log(`🔧 In production: implement user-specific tokens or caching`)
 
-        console.log(`Rate limit exceeded, waiting ${waitTime}ms until reset.`)
-        await new Promise(resolve => setTimeout(resolve, waitTime))
-        continue
+          // Re-throw immediately - with personal token this shouldn't happen in dev
+          throw error
+        }
+        throw error // Re-throw non-rate-limit 403 errors
       }
 
       if (attempt > maxRetries) throw error
@@ -41,6 +48,7 @@ async function retryWithBackoff<T>(
 }
 
 export async function getUserRepositories(username: string): Promise<Repository[]> {
+  console.log(`🚀 Fetching repositories for @${username}`)
   return retryWithBackoff(async () => {
     const repos: Repository[] = []
     let page = 1
@@ -50,9 +58,11 @@ export async function getUserRepositories(username: string): Promise<Repository[
       const response = await octokit.repos.listForUser({
         username,
         visibility: 'public',
-        per_page: 100,
+        per_page: 30, // Reduce to 30 per page for fewer API calls
         page,
       })
+
+      console.log(`📦 Page ${page}: Found ${response.data.length} repositories for @${username}`)
 
       repos.push(
         ...response.data.map((repo: any) => ({
@@ -63,10 +73,11 @@ export async function getUserRepositories(username: string): Promise<Repository[
         }))
       )
 
-      hasMore = response.data.length === 100 && page < 10 // Limit to prevent infinite
+      hasMore = response.data.length === 30 && page < 5 // Limit to prevent excessive API calls
       page++
     }
 
+    console.log(`✅ Total repositories found for @${username}: ${repos.length}`)
     return repos
   })
 }
@@ -108,15 +119,68 @@ export async function getUserTotalCommits(username: string, since?: Date): Promi
   return commitCounts.reduce((total, count) => total + count, 0)
 }
 
+export async function getRepositoryCommitCount(
+  owner: string,
+  repo: string,
+  since?: Date
+): Promise<number> {
+  try {
+    const commits = await getRepositoryCommits(owner, repo, since)
+    return commits.length
+  } catch (error) {
+    console.log(`⚠️ Could not get commit count for ${owner}/${repo}:`, error instanceof Error ? error.message : 'Unknown error')
+    return 0
+  }
+}
+
+export async function getUserTotalCommitsFromEvents(username: string, since?: Date): Promise<number> {
+  console.log(`📊 Getting total commits for @${username} using Events API (since ${since?.toISOString() || 'beginning'})`)
+
+  return retryWithBackoff(async () => {
+    let totalCommits = 0
+    let page = 1
+    let hasMore = true
+    const maxPages = 10 // Limit to prevent excessive API calls
+
+    while (hasMore && page <= maxPages) {
+      const response = await octokit.activity.listEventsForAuthenticatedUser({
+        username,
+        per_page: 100,
+        page,
+      })
+
+      if (response.data.length === 0) break
+
+      // Count only PushEvents (which represent commits)
+      const pushEvents = response.data.filter(event => event.type === 'PushEvent')
+
+      for (const event of pushEvents) {
+        // Skip events before the 'since' date if provided
+        if (since && event.created_at && new Date(event.created_at) < since) continue
+
+        // PushEvent has a payload with commits
+        const pushPayload = event.payload as any
+        if (pushPayload.commits && Array.isArray(pushPayload.commits)) {
+          totalCommits += pushPayload.commits.length
+        }
+      }
+
+      hasMore = response.data.length === 100
+      page++
+    }
+
+    console.log(`✅ Found ${totalCommits} total commits for @${username} via Events API`)
+    return totalCommits
+  })
+}
+
 export async function validateGitHubUsername(username: string): Promise<boolean> {
   try {
-    await octokit.users.getByUsername({ username })
+    const response = await octokit.users.getByUsername({ username })
+    console.log(`✅ GitHub user @${username} exists`)
     return true
   } catch (error: any) {
-    if (error.status === 404) {
-      return false
-    }
-    console.error('Error validating GitHub username:', error.message)
+    console.log(`❌ GitHub user @${username} validation failed:`, error.status, error.message)
     return false
   }
 }

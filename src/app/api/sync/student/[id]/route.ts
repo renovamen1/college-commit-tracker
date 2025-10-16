@@ -16,11 +16,20 @@ export async function POST(
   try {
     await connectToDatabase()
 
-    // Find the student
-    const user = await User.findOne({
-      _id: id,
-      role: 'student'
-    }).select('_id githubUsername totalCommits lastSyncDate name').exec()
+    // Try GitHub username lookup FIRST (safer), then fall back to ObjectId
+    const user = await User.findOne({ githubUsername: id, role: 'student' })
+      .select('_id githubUsername totalCommits lastSyncDate name')
+      .exec()
+
+    // If GitHub username lookup found nothing, try ObjectId lookup
+    let userById = null
+    if (!user && /^[0-9a-fA-F]{24}$/.test(id)) { // Check if it's a valid ObjectId format
+      userById = await User.findOne({ _id: id, role: 'student' })
+        .select('_id githubUsername totalCommits lastSyncDate name')
+        .exec()
+    }
+
+    const finalUser = user || userById
 
     if (!user) {
       return NextResponse.json(

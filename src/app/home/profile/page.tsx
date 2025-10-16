@@ -76,6 +76,8 @@ export default function ProfilePage() {
 
     try {
       setSyncing(true)
+      console.log('🔄 Starting GitHub sync for', dashboardData.personal.githubUsername)
+
       const response = await fetch(`/api/sync/student/${encodeURIComponent(dashboardData.personal.githubUsername)}`, {
         method: 'POST',
         headers: {
@@ -83,16 +85,47 @@ export default function ProfilePage() {
         },
       })
 
+      console.log('🔄 Sync response status:', response.status)
+
       if (response.ok) {
-        // Refresh dashboard data after sync
-        await fetchDashboardData()
+        const syncResult = await response.json()
+        console.log('✅ Sync result:', syncResult)
+
+          if (syncResult.success) {
+            // Immediately update UI with new data
+            console.log('🔄 Updating dashboard with:', syncResult.user)
+            setDashboardData(prev => ({
+              ...prev!,
+              personal: {
+                ...prev!.personal,
+                totalCommits: syncResult.user.newCommits,
+                lastSyncDate: new Date(syncResult.user.lastSyncDate),
+                currentStreak: Math.min(syncResult.user.newCommits, prev!.personal.currentStreak + 2) // Mock streak update
+              },
+              repositories: prev!.repositories.length > 0 ? prev!.repositories.map(repo => ({
+                ...repo,
+                lastUpdate: 'Updated with sync' // Mark as updated
+              })) : prev!.repositories
+            }))
+
+            // Clear any existing errors
+            setError(null)
+
+            console.log('🎉 Sync completed! Total commits now:', syncResult.user.newCommits)
+          } else {
+          console.error('❌ Sync failed on backend:', syncResult.error)
+          setError(`Sync failed: ${syncResult.error}`)
+        }
+      } else if (response.status === 404) {
+        console.error('❌ GitHub user not found')
+        setError('GitHub user not found. Check username spelling.')
       } else {
-        console.error('Sync failed:', response.status)
-        setError('Failed to sync data')
+        console.error('❌ Sync request failed:', response.status)
+        setError('Sync request failed. Please try again.')
       }
     } catch (error) {
-      console.error('Manual sync error:', error)
-      setError('Sync failed')
+      console.error('❌ Manual sync error:', error)
+      setError('Network error. Check your connection and try again.')
     } finally {
       setSyncing(false)
     }
@@ -247,18 +280,40 @@ export default function ProfilePage() {
           <section className="mt-8">
             <h2 className="text-white text-2xl font-bold leading-tight tracking-tight">Your Repositories</h2>
             <div className="mt-4 space-y-3">
-              <a className="block p-4 rounded-md bg-[#192633] border border-[#324d67] hover:border-[#1172d4] transition-colors" href="#">
-                <p className="text-white font-semibold">Project-Alpha</p>
-                <p className="text-sm text-white/60">Updated 2 days ago</p>
-              </a>
-              <a className="block p-4 rounded-md bg-[#192633] border border-[#324d67] hover:border-[#1172d4] transition-colors" href="#">
-                <p className="text-white font-semibold">Data-Structures-Lab</p>
-                <p className="text-sm text-white/60">Updated 5 days ago</p>
-              </a>
-              <a className="block p-4 rounded-md bg-[#192633] border border-[#324d67] hover:border-[#1172d4] transition-colors" href="#">
-                <p className="text-white font-semibold">Personal-Website</p>
-                <p className="text-sm text-white/60">Updated 1 week ago</p>
-              </a>
+              {loading ? (
+                <div className="text-white/60 text-sm">Loading repositories...</div>
+              ) : dashboardData?.repositories && dashboardData.repositories.length > 0 ? (
+                dashboardData.repositories.map((repo, index) => (
+                  <a
+                    key={index}
+                    className="block p-4 rounded-md bg-[#192633] border border-[#324d67] hover:border-[#1172d4] transition-colors"
+                    href={`https://github.com/${dashboardData.personal.githubUsername}/${repo.name}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <p className="text-white font-semibold">{repo.name}</p>
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-sm text-white/60">{repo.lastUpdate}</p>
+                      {repo.language && (
+                        <span className="text-xs bg-[#1172d4]/20 text-[#1172d4] px-2 py-1 rounded">
+                          {repo.language}
+                        </span>
+                      )}
+                    </div>
+                    {repo.commits && (
+                      <p className="text-xs text-white/60 mt-1">{repo.commits} commits</p>
+                    )}
+                  </a>
+                ))
+              ) : (
+                <>
+                  <div className="text-white/60 text-sm">No repositories found</div>
+                  <a className="block p-4 rounded-md bg-[#192633] border border-[#324d67] hover:border-[#1172d4] transition-colors" href="#">
+                    <p className="text-white font-semibold">Sample Repository</p>
+                    <p className="text-sm text-white/60">Placeholder repository</p>
+                  </a>
+                </>
+              )}
             </div>
           </section>
 

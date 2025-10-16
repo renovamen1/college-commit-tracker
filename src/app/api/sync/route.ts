@@ -5,7 +5,7 @@ import { errorHandler } from '@/lib/middleware/errorHandler'
 import { validateBody, validateQuery, validateRequestSize } from '@/lib/middleware/validation'
 import { globalRateLimiter } from '@/lib/middleware/rateLimit'
 import { z } from 'zod'
-import { getUserRepositories, getRepositoryCommits, validateGitHubUsername } from '@/lib/github'
+import { getUserRepositories, getRepositoryCommits, validateGitHubUsername, getUserTotalCommitsFromEvents } from '@/lib/github'
 import config from '@/lib/config'
 
 // Types for sync operations
@@ -65,47 +65,50 @@ async function syncStudentCommits(
   const startTime = Date.now()
   const oldCommitCount = user.totalCommits || 0
 
-  try {
-    // Validate GitHub username exists
-    progressCallback?.(`Validating GitHub user @${user.githubUsername}`)
-    const isValid = await validateGitHubUsername(user.githubUsername)
-    if (!isValid) {
-      throw new Error('GitHub username not found or account is private')
-    }
+    try {
+      // Validate GitHub username exists
+      progressCallback?.(`🔍 Validating GitHub user @${user.githubUsername}`)
+      const isValid = await validateGitHubUsername(user.githubUsername)
+      if (!isValid) {
+        throw new Error(`GitHub username @${user.githubUsername} not found or account is private`)
+      }
+      console.log(`✅ GitHub user @${user.githubUsername} validated`)
 
-    // Get all user repositories
-    progressCallback?.(`Fetching repositories for @${user.githubUsername}`)
-    const repositories = await getUserRepositories(user.githubUsername)
-
-    // Count new commits since last sync
+    // Use Events API to get accurate total commits (more efficient and comprehensive)
+    progressCallback?.(`Getting total commits from Events API for @${user.githubUsername}`)
     const sinceDate = user.lastSyncDate ? new Date(user.lastSyncDate) : undefined
-    let newCommitCount = 0
 
-    // Process repositories in parallel with concurrency control
-    const BATCH_SIZE = 3
-    progressCallback?.(`Processing ${repositories.length} repositories for @${user.githubUsername}`)
+    let totalCommits
+    try {
+      // Try Events API first (comprehensive and efficient)
+      totalCommits = await getUserTotalCommitsFromEvents(user.githubUsername, sinceDate)
+      progressCallback?.(`✅ Events API: Found ${totalCommits} commits`)
+    } catch (error) {
+      // Fallback to repository-based counting if Events API fails
+      progressCallback?.(`⚠️ Events API failed, using repository method`)
+      const repositories = await getUserRepositories(user.githubUsername)
+      progressCallback?.(`Processing ${repositories.length} repositories for @${user.githubUsername}`)
 
-    for (let i = 0; i < repositories.length; i += BATCH_SIZE) {
-      const repoBatch = repositories.slice(i, i + BATCH_SIZE)
+      const commitPromises = repositories.map(repo =>
+        getRepositoryCommits(user.githubUsername, repo.name, sinceDate)
+          .then(commits => commits.length)
+          .then(count => {
+            progressCallback?.(`📊 ${repo.name}: ${count} commits`)
+            return count
+          })
+          .catch(error => {
+            progressCallback?.(`⚠️ Skipping ${repo.name}: ${error.message}`)
+            return 0
+          })
+      )
 
-      const commitPromises = repoBatch.map(async (repo) => {
-        try {
-          progressCallback?.(`Fetching commits from ${user.githubUsername}/${repo.name}`)
-          const commits = await getRepositoryCommits(user.githubUsername, repo.name, sinceDate)
-          return commits.length
-        } catch (error) {
-          // If repository access fails (private repos, etc.), skip it
-          progressCallback?.(`Skipping ${user.githubUsername}/${repo.name}: ${error instanceof Error ? error.message : 'Unknown error'}`)
-          return 0
-        }
-      })
-
-      const batchCommits = await Promise.all(commitPromises)
-      newCommitCount += batchCommits.reduce((sum, count) => sum + count, 0)
+      const commitCounts = await Promise.all(commitPromises)
+      totalCommits = commitCounts.reduce((sum, count) => sum + count, 0)
+      progressCallback?.(`✅ Repository method: Found ${totalCommits} commits`)
     }
 
-    // Update user with new commit count
-    const updatedCommits = oldCommitCount + newCommitCount
+    // Update user with total commit count (not additive since we're getting totals)
+    const updatedCommits = totalCommits
 
     await User.findByIdAndUpdate((user as any)._id, {
       totalCommits: updatedCommits,

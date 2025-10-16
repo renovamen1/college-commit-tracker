@@ -24,7 +24,7 @@ async function testStudentDashboard() {
     // Check if demo student exists
     console.log('\n👤 Checking demo student...')
     const student = await db.collection('users').findOne({
-      githubUsername: 'student-demo',
+      githubUsername: 'smrn001',
       role: 'student'
     })
 

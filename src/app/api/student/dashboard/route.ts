@@ -4,6 +4,8 @@ import { connectToDatabase } from '@/lib/database'
 import User from '@/lib/models/User'
 import { errorHandler } from '@/lib/middleware/errorHandler'
 import { validateRequestSize } from '@/lib/middleware/security'
+import { getUserRepositories, getRepositoryCommitCount } from '@/lib/github'
+// Remove this import - Repository type is defined in github.ts
 
 /**
  * GET /api/student/dashboard - Get personalized dashboard data for logged-in student
@@ -37,7 +39,7 @@ export async function GET(request: NextRequest) {
     console.log('🔍 Looking for existing student...')
     // Find student by GitHub username (skip _id field search since "demo_student_id" is not a valid ObjectId)
     let student = await User.findOne({
-      githubUsername: 'student-demo',
+      githubUsername: 'smrn001',
       role: 'student'
     })
 
@@ -51,12 +53,12 @@ export async function GET(request: NextRequest) {
       try {
         console.log('⚡ Creating User object...')
         student = new User({
-          githubUsername: 'student-demo',
+          githubUsername: 'smrn001',
           name: 'Demo Student',
           email: 'student@college.edu',
           role: 'student',
-          totalCommits: 197,
-          lastSyncDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+          totalCommits: 0, // Start with 0 - will be updated by sync
+          lastSyncDate: null, // No sync yet
           isActive: true,
           password: demoPassword // Required password for demo user
         })
@@ -69,17 +71,43 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get demo data since we don't have real GitHub sync yet
-    const dashboardData = {
-      personal: {
-        totalCommits: student.totalCommits || 0,
-        currentStreak: calculateStreak(),
-        githubUsername: student.githubUsername,
-        lastSyncDate: student.lastSyncDate,
-        activeSince: student.createdAt,
-        rank: await calculateStudentRank(student.githubUsername)
-      },
-      repositories: [
+    console.log('📊 Generating dashboard data for', student.githubUsername)
+
+    // Get real repositories from synced user data OR mock data if not synced yet
+    let repositories = []
+    try {
+      console.log('🔍 Attempting to get real repositories...')
+      const realRepos = await getUserRepositories(student.githubUsername)
+      console.log(`✅ Found ${realRepos.length} real repositories for @${student.githubUsername}`)
+
+      console.log('🔢 Getting real commit counts per repository...')
+
+      // Get real commit counts for each repository (top 3)
+      const topRepos = realRepos.slice(0, 3)
+      repositories = await Promise.all(
+        topRepos.map(async (repo) => {
+          console.log(`🔢 Calculating commits for ${student.githubUsername}/${repo.name}`)
+          const commitCount = await getRepositoryCommitCount(student.githubUsername, repo.name)
+
+          return {
+            name: repo.name,
+            language: repo.language || 'Unknown',
+            commits: commitCount, // Real commit count from GitHub!
+            lastUpdate: new Date(repo.updated_at).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            }) // Real "Updated X days ago" style
+          }
+        })
+      )
+
+      console.log('✅ Real repository commit counts calculated!')
+
+      console.log('✅ Using real repositories in dashboard')
+    } catch (repoError) {
+      console.log('⚠️ Could not fetch real repositories, using mock data:', repoError instanceof Error ? repoError.message : String(repoError))
+      repositories = [
         {
           name: 'Data-Structures-Lab',
           language: 'Java',
@@ -98,10 +126,25 @@ export async function GET(request: NextRequest) {
           commits: 67,
           lastUpdate: '1 week ago'
         }
-      ],
+      ]
+    }
+
+    // Get real analytics or calculate from synced data
+    const dashboardData = {
+      personal: {
+        totalCommits: student.totalCommits || 0,
+        currentStreak: student.totalCommits ? Math.floor(student.totalCommits / 10) + 1 : calculateStreak(),
+        githubUsername: student.githubUsername,
+        lastSyncDate: student.lastSyncDate,
+        activeSince: student.createdAt,
+        rank: await calculateStudentRank(student.githubUsername)
+      },
+      repositories,
       contributionCalendar: generateContributionCalendar(),
       classStanding: await getClassStanding(student._id?.toString())
     }
+
+    console.log('✅ Dashboard data generated with real repositories')
 
     return NextResponse.json({
       success: true,
@@ -157,7 +200,7 @@ async function calculateStudentRank(githubUsername: string): Promise<string> {
   // Mock ranking calculation
   // In real implementation, this would query against other students
   const mockRankings = {
-    'student-demo': '#42',
+    'smrn001': '#42',
     'student-alpha': '#1',
     'student-beta': '#5'
   }
@@ -166,17 +209,22 @@ async function calculateStudentRank(githubUsername: string): Promise<string> {
 
 async function getClassStanding(studentId: string) {
   console.log('📊 Calculating class standing for student:', studentId)
-  // Mock class standing data
+
+  // Get current student's commit count from database
+  const studentData = await User.findById(studentId).select('totalCommits').lean().exec()
+  const yourCommits = (studentData as any)?.totalCommits || 0
+
+  // Mock class standing data but use real commit count for "You"
   return {
     className: 'Computer Science 101',
     position: 3,
     totalStudents: 45,
     averageCommits: 150,
-    yourCommits: 197,
+    yourCommits,
     topStudents: [
       { name: 'Alex Chen', commits: 245, position: 1 },
       { name: 'Maya Patel', commits: 223, position: 2 },
-      { name: 'You', commits: 197, position: 3 },
+      { name: 'You', commits: yourCommits, position: 3 },
       { name: 'Jordan Kim', commits: 189, position: 4 },
       { name: 'Taylor Swift', commits: 178, position: 5 }
     ]
