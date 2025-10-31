@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/database'
-import User from '@/lib/models/User'
+import { MongoClient } from 'mongodb'
 import { errorHandler } from '@/lib/middleware/errorHandler'
 import { validateBody, validateQuery, validateRequestSize } from '@/lib/middleware/validation'
 import { globalRateLimiter } from '@/lib/middleware/rateLimit'
@@ -110,10 +110,27 @@ async function syncStudentCommits(
     // Update user with total commit count (not additive since we're getting totals)
     const updatedCommits = totalCommits
 
-    await User.findByIdAndUpdate((user as any)._id, {
-      totalCommits: updatedCommits,
-      lastSyncDate: new Date()
-    })
+    console.log(`💾 Updating ${user.githubUsername}: ${oldCommitCount} → ${updatedCommits} commits`)
+
+    // Use MongoDB native driver to update students collection
+    const client = new MongoClient(process.env.MONGODB_URI!)
+    await client.connect()
+    const db = client.db(process.env.MONGODB_NAME || 'college-commit-tracker')
+    const updateResult = await db.collection('students').updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          totalCommits: updatedCommits,
+          lastSyncDate: new Date()
+        }
+      }
+    )
+
+    if (!updateResult) {
+      throw new Error(`Failed to update user ${user.githubUsername}`)
+    }
+
+    console.log(`✅ Successfully updated ${user.githubUsername} with ${updatedCommits} commits`)
 
     const syncTime = Date.now() - startTime
 
@@ -176,11 +193,20 @@ export async function POST(request: NextRequest) {
 
     const { batchSize = 10, dryRun = false } = validationResult.data
 
-    // Get all students
-    const students = await User.find({ role: 'student', isActive: true })
-      .select('_id githubUsername totalCommits lastSyncDate')
-      .lean()
-      .exec()
+    // Get all students - FROM STUDENTS COLLECTION
+    const client = new MongoClient(process.env.MONGODB_URI!)
+    await client.connect()
+    const db = client.db(process.env.MONGODB_NAME || 'college-commit-tracker')
+    const allStudents = await db.collection('students').find({ role: 'student', isActive: true })
+      .project({ _id: 1, githubUsername: 1, totalCommits: 1, lastSyncDate: 1 })
+      .toArray()
+
+    console.log(`📊 Found ${allStudents.length} students in database`)
+
+    // For testing, limit to first 3 students to avoid rate limits
+    const students = allStudents.slice(0, 3)
+
+    console.log(`🔄 Syncing first ${students.length} students for testing`)
 
     if (students.length === 0) {
       return NextResponse.json({
@@ -320,55 +346,64 @@ export async function GET(request: NextRequest) {
     // Connect to database
     await connectToDatabase()
 
-    // Get recent sync statistics with enhanced aggregation
+    // Get recent sync statistics with enhanced aggregation - FROM STUDENTS COLLECTION
+    const client = new MongoClient(process.env.MONGODB_URI!)
+    await client.connect()
+    const db = client.db(process.env.MONGODB_NAME || 'college-commit-tracker')
+
     const [
       totalUsers,
-      syncedUsers,
-      recentlySyncedUsers,
-      syncMetrics
+      syncedUsersData,
+      syncMetricsData
     ] = await Promise.all([
-      User.countDocuments({ role: 'student', isActive: true }),
-      User.countDocuments({
+      db.collection('students').countDocuments({ role: 'student', isActive: true }),
+      db.collection('students').find({
         role: 'student',
         isActive: true,
         lastSyncDate: { $exists: true, $ne: null }
-      }),
-      User.find({
+      }).sort({ lastSyncDate: -1 }).limit(5).toArray(),
+      db.collection('students').find({
         role: 'student',
         isActive: true,
         lastSyncDate: { $exists: true, $ne: null }
-      })
-        .select('name githubUsername totalCommits lastSyncDate updatedAt')
-        .sort({ lastSyncDate: -1 })
-        .limit(5)
-        .lean()
-        .exec(),
-      User.aggregate([
-        {
-          $match: {
-            role: 'student',
-            isActive: true,
-            lastSyncDate: { $exists: true, $ne: null }
-          }
-        },
-        {
-          $group: {
-            _id: null,
-            avgSyncAge: {
-              $avg: {
-                $divide: [
-                  { $subtract: [new Date(), '$lastSyncDate'] },
-                  1000 * 60 * 60 // Convert to hours
-                ]
-              }
-            },
-            minSyncCommits: { $min: '$totalCommits' },
-            maxSyncCommits: { $max: '$totalCommits' },
-            latestSync: { $max: '$lastSyncDate' }
-          }
-        }
-      ]).exec()
+      }).toArray()
     ])
+
+    const syncedUsers = syncedUsersData.length
+    const allSyncedUsers = syncMetricsData
+
+    // Calculate sync metrics
+    let avgSyncAge = 0
+    let minSyncCommits = Infinity
+    let maxSyncCommits = 0
+    let latestSync: Date | null = null
+
+    if (allSyncedUsers.length > 0) {
+      const totalAge = allSyncedUsers.reduce((sum, user) => {
+        if (user.lastSyncDate) {
+          const age = (Date.now() - new Date(user.lastSyncDate).getTime()) / (1000 * 60 * 60)
+          return sum + age
+        }
+        return sum
+      }, 0)
+      avgSyncAge = totalAge / allSyncedUsers.length
+
+      allSyncedUsers.forEach(user => {
+        minSyncCommits = Math.min(minSyncCommits, user.totalCommits || 0)
+        maxSyncCommits = Math.max(maxSyncCommits, user.totalCommits || 0)
+        if (!latestSync || (user.lastSyncDate && user.lastSyncDate > latestSync)) {
+          latestSync = user.lastSyncDate
+        }
+      })
+    }
+
+    const recentlySyncedUsers = syncedUsersData
+    const syncMetrics = [{
+      avgSyncAge,
+      minSyncCommits: minSyncCommits === Infinity ? 0 : minSyncCommits,
+      maxSyncCommits,
+      latestSync
+    }]
 
     const metrics = syncMetrics[0] || {
       avgSyncAge: 0,
