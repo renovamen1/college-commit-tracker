@@ -5,7 +5,7 @@ import { errorHandler } from '@/lib/middleware/errorHandler'
 import { validateBody, validateQuery, validateRequestSize } from '@/lib/middleware/validation'
 import { globalRateLimiter } from '@/lib/middleware/rateLimit'
 import { z } from 'zod'
-import { getUserRepositories, getRepositoryCommits, validateGitHubUsername, getUserTotalCommitsFromEvents } from '@/lib/github'
+import { getUserRepositories, getRepositoryCommits, validateGitHubUsername, getUserTotalCommitsFromEvents, getGraphQLContributionCount } from '@/lib/github'
 import config from '@/lib/config'
 
 // Types for sync operations
@@ -74,38 +74,16 @@ async function syncStudentCommits(
       }
       console.log(`✅ GitHub user @${user.githubUsername} validated`)
 
-    // Use Events API to get accurate total commits (more efficient and comprehensive)
-    progressCallback?.(`Getting total commits from Events API for @${user.githubUsername}`)
-    const sinceDate = user.lastSyncDate ? new Date(user.lastSyncDate) : undefined
+    // Use GraphQL API to get 365-day contribution total (includes private contributions)
+    progressCallback?.(`📊 Getting total contributions for @${user.githubUsername} using GraphQL API (365 days)`)
 
-    let totalCommits
-    try {
-      // Try Events API first (comprehensive and efficient)
-      totalCommits = await getUserTotalCommitsFromEvents(user.githubUsername, sinceDate)
-      progressCallback?.(`✅ Events API: Found ${totalCommits} commits`)
-    } catch (error) {
-      // Fallback to repository-based counting if Events API fails
-      progressCallback?.(`⚠️ Events API failed, using repository method`)
-      const repositories = await getUserRepositories(user.githubUsername)
-      progressCallback?.(`Processing ${repositories.length} repositories for @${user.githubUsername}`)
+    const totalCommits = await getGraphQLContributionCount(user.githubUsername)
 
-      const commitPromises = repositories.map(repo =>
-        getRepositoryCommits(user.githubUsername, repo.name, sinceDate)
-          .then(commits => commits.length)
-          .then(count => {
-            progressCallback?.(`📊 ${repo.name}: ${count} commits`)
-            return count
-          })
-          .catch(error => {
-            progressCallback?.(`⚠️ Skipping ${repo.name}: ${error.message}`)
-            return 0
-          })
-      )
-
-      const commitCounts = await Promise.all(commitPromises)
-      totalCommits = commitCounts.reduce((sum, count) => sum + count, 0)
-      progressCallback?.(`✅ Repository method: Found ${totalCommits} commits`)
+    if (totalCommits === null) {
+      throw new Error(`Failed to fetch contribution data for @${user.githubUsername}`)
     }
+
+    progressCallback?.(`✅ GraphQL API: Found ${totalCommits} contributions (365-day total)`)
 
     // Update user with total commit count (not additive since we're getting totals)
     const updatedCommits = totalCommits

@@ -1,4 +1,5 @@
 import { Octokit } from '@octokit/rest'
+import { graphql } from '@octokit/graphql'
 import { Repository, GitHubCommit } from '../types'
 
 const token = process.env.GITHUB_ACCESS_TOKEN
@@ -172,6 +173,59 @@ export async function getUserTotalCommitsFromEvents(username: string, since?: Da
     console.log(`✅ Found ${totalCommits} total commits for @${username} via Events API`)
     return totalCommits
   })
+}
+
+// GraphQL query for 365-day contribution total
+const CONTRIBUTION_QUERY = `
+  query($username: String!) {
+    user(login: $username) {
+      contributionsCollection {
+        contributionCalendar {
+          totalContributions
+        }
+      }
+    }
+  }
+`
+
+export async function getGraphQLContributionCount(username: string): Promise<number | null> {
+  const serverToken = process.env.GITHUB_SERVER_TOKEN
+
+  if (!serverToken) {
+    console.error('❌ GITHUB_SERVER_TOKEN not found in environment')
+    return null
+  }
+
+  try {
+    console.log(`🔍 Fetching GraphQL contributions for @${username}`)
+
+    const result = await graphql(CONTRIBUTION_QUERY, {
+      username,
+      headers: {
+        authorization: `token ${serverToken}`,
+      },
+    }) as any
+
+    const totalContributions = result.user.contributionsCollection.contributionCalendar.totalContributions
+
+    console.log(`✅ @${username}: ${totalContributions} contributions (365-day total)`)
+    return totalContributions
+
+  } catch (error: any) {
+    console.error(`❌ GraphQL error for @${username}:`, error.message)
+
+    if (error.message.includes('Could not resolve to a User')) {
+      console.log(`⚠️ User @${username} not found`)
+      return 0
+    }
+
+    if (error.message.includes('API rate limit exceeded')) {
+      console.log(`⏳ Rate limit hit, waiting...`)
+      return null
+    }
+
+    return null
+  }
 }
 
 export async function validateGitHubUsername(username: string): Promise<boolean> {

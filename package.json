@@ -18,6 +18,7 @@
     "recreate-admin": "node src/scripts/recreateAdmin.cjs"
   },
   "dependencies": {
+    "@octokit/graphql": "^9.0.3",
     "@octokit/rest": "^20.0.2",
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
