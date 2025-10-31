@@ -175,9 +175,6 @@ export default function HomeDashboardPage() {
         <h1 className="text-white text-4xl font-bold leading-tight tracking-tighter">Dashboard</h1>
         <p className="text-white/60 mt-2">
           A high-level overview of the college's GitHub activity.
-          {dashboardData?.metadata.dataSource === 'MongoDB Atlas Aggregations' && (
-            <span className="ml-2 text-green-400">🔗 Real-time data from enrolled students</span>
-          )}
         </p>
         {error && (
           <div className="mt-4 p-4 bg-red-900/50 border border-red-700 rounded-md">
@@ -201,11 +198,11 @@ export default function HomeDashboardPage() {
       </header>
 
       {/* Dashboard Content Grid */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Main Stats and Lists */}
-        <div className="lg:col-span-2">
+      <section className="grid grid-cols-1 gap-8">
+        {/* Main Content - Full Width */}
+        <div>
           {/* Metric Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
             <div className="flex flex-col gap-2 rounded-md p-6 bg-[#192633] border border-[#324d67]">
               <p className="text-white/60 text-base font-medium leading-normal">Total Commits</p>
               <p className="text-white tracking-light text-3xl font-bold leading-tight">
@@ -216,12 +213,6 @@ export default function HomeDashboardPage() {
               <p className="text-white/60 text-base font-medium leading-normal">Total Contributors</p>
               <p className="text-white tracking-light text-3xl font-bold leading-tight">
                 {loading ? '...' : dashboardData?.overview.totalContributors || 832}
-              </p>
-            </div>
-            <div className="flex flex-col gap-2 rounded-md p-6 bg-[#192633] border border-[#324d67]">
-              <p className="text-white/60 text-base font-medium leading-normal">Active Repositories</p>
-              <p className="text-white tracking-light text-3xl font-bold leading-tight">
-                {loading ? '...' : dashboardData?.overview.activeRepositories || 128}
               </p>
             </div>
           </div>
@@ -305,75 +296,6 @@ export default function HomeDashboardPage() {
                 </div>
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Right Column - Recent Activity */}
-        <div className="lg:col-span-1">
-          <div className="flex flex-col gap-4 rounded-md p-6 bg-[#192633] border border-[#324d67] h-full">
-            <h3 className="text-white text-xl font-bold leading-tight">Recent Activity</h3>
-            <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8" style={{
-                  backgroundImage: 'url("https://lh3.googleusercontent.com/a/ACg8ocK81o9Qx_rq-mv4lp-29_G-F0vYJFAp32r1QpP-68Ea=s96-c")'
-                }}></div>
-                <div className="text-sm">
-                  <p className="text-white">
-                    <span className="font-semibold">Liam Foster</span> pushed to{' '}
-                    <span className="font-semibold">Project Phoenix</span>
-                  </p>
-                  <p className="text-white/60 text-xs mt-1">2 hours ago</p>
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8" style={{
-                  backgroundImage: 'url("https://lh3.googleusercontent.com/a/ACg8ocIKk-l_829_G-5z-82vGgT-B6361rR-W-v-1g1=s96-c")'
-                }}></div>
-                <div className="text-sm">
-                  <p className="text-white">
-                    <span className="font-semibold">Sophia Chen</span> opened a pull request in{' '}
-                    <span className="font-semibold">Data Vis</span>
-                  </p>
-                  <p className="text-white/60 text-xs mt-1">5 hours ago</p>
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8" style={{
-                  backgroundImage: 'url("https://lh3.googleusercontent.com/a-/AOh14Gh-Q_V4B-8z_V_Y_e_i_X_J_w_J_A_G-j_C_A=s96-c")'
-                }}></div>
-                <div className="text-sm">
-                  <p className="text-white">
-                    <span className="font-semibold">Mason Rodriguez</span> commented on an issue in{' '}
-                    <span className="font-semibold">Algo-Trading Bot</span>
-                  </p>
-                  <p className="text-white/60 text-xs mt-1">Yesterday</p>
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8" style={{
-                  backgroundImage: 'url("https://lh3.googleusercontent.com/a/ACg8ocL81bW8Zg_2Z-V-j5z2x-Z_C-l_A_j_Q-P=s96-c")'
-                }}></div>
-                <div className="text-sm">
-                  <p className="text-white">
-                    <span className="font-semibold">Isabella Kim</span> forked{' '}
-                    <span className="font-semibold">ML-Toolkit</span>
-                  </p>
-                  <p className="text-white/60 text-xs mt-1">Yesterday</p>
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8" style={{
-                  backgroundImage: 'url("https://lh3.googleusercontent.com/a/ACg8ocL-g-Z-Z_j_k_L-A-j_Q_P=s96-c")'
-                }}></div>
-                <div className="text-sm">
-                  <p className="text-white">
-                    <span className="font-semibold">Jameson Lee</span> pushed to{' '}
-                    <span className="font-semibold">Web-Crawler</span>
-                  </p>
-                  <p className="text-white/60 text-xs mt-1">2 days ago</p>
-                </div>
-              </li>
-            </ul>
           </div>
         </div>
       </section>
