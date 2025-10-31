@@ -233,38 +233,95 @@ async function calculateStudentRank(githubUsername: string): Promise<string> {
 async function getClassStanding(studentId: string) {
   console.log('📊 Calculating class standing for student:', studentId)
 
-  // Get current student's commit count from students collection
+  // Get MongoDB client for direct queries to students collection
   const client = new MongoClient(process.env.MONGODB_URI!)
   await client.connect()
   const db = client.db(process.env.MONGODB_NAME || 'college-commit-tracker')
 
-  let studentData
   try {
-    studentData = await db.collection('students').findOne(
+    // Get current student's data
+    const currentStudent = await db.collection('students').findOne(
       { _id: new ObjectId(studentId) },
-      { projection: { totalCommits: 1 } }
+      { projection: { totalCommits: 1, name: 1, githubUsername: 1 } }
     )
+
+    if (!currentStudent) {
+      console.error('❌ Current student not found for class standing')
+      return {
+        className: 'Computer Science 101',
+        position: 0,
+        totalStudents: 0,
+        averageCommits: 0,
+        yourCommits: 0,
+        topStudents: []
+      }
+    }
+
+    const yourCommits = currentStudent.totalCommits || 0
+    console.log(`📊 Current student: ${currentStudent.name} (@${currentStudent.githubUsername}) - ${yourCommits} commits`)
+
+    // Get all students in the same class (for now, assume all students are in the same class)
+    // In a real implementation, you'd filter by classId
+    const allStudents = await db.collection('students')
+      .find({ role: 'student', isActive: true })
+      .project({ _id: 1, name: 1, githubUsername: 1, totalCommits: 1 })
+      .sort({ totalCommits: -1 }) // Sort by commits descending
+      .toArray()
+
+    console.log(`📊 Found ${allStudents.length} total students in class`)
+
+    // Calculate average commits
+    const totalCommits = allStudents.reduce((sum, student) => sum + (student.totalCommits || 0), 0)
+    const averageCommits = allStudents.length > 0 ? Math.round(totalCommits / allStudents.length) : 0
+
+    // Find current student's position
+    const currentStudentIndex = allStudents.findIndex(student =>
+      student._id.toString() === studentId
+    )
+    const position = currentStudentIndex !== -1 ? currentStudentIndex + 1 : 0
+
+    console.log(`📊 Student position: ${position}/${allStudents.length}, Average commits: ${averageCommits}`)
+
+    // Get top 5 students for leaderboard
+    const topStudents = allStudents.slice(0, 5).map((student, index) => ({
+      name: student.name || student.githubUsername || 'Unknown',
+      commits: student.totalCommits || 0,
+      position: index + 1
+    }))
+
+    // Replace the current student's entry with "You" if they're in top 5
+    const currentStudentInTop5 = topStudents.find(student =>
+      student.name === currentStudent.name ||
+      student.name === currentStudent.githubUsername
+    )
+
+    if (currentStudentInTop5) {
+      currentStudentInTop5.name = 'You'
+      currentStudentInTop5.commits = yourCommits
+    }
+
+    console.log(`📊 Top 5 students:`, topStudents.map(s => `${s.position}. ${s.name}: ${s.commits} commits`))
+
+    return {
+      className: 'Computer Science 101', // In real app, get from student's class
+      position,
+      totalStudents: allStudents.length,
+      averageCommits,
+      yourCommits,
+      topStudents
+    }
+
   } catch (error) {
-    console.error('Error fetching student data:', error)
+    console.error('❌ Error calculating class standing:', error)
+    return {
+      className: 'Computer Science 101',
+      position: 0,
+      totalStudents: 0,
+      averageCommits: 0,
+      yourCommits: 0,
+      topStudents: []
+    }
   } finally {
     client.close()
-  }
-
-  const yourCommits = studentData?.totalCommits || 0
-
-  // Mock class standing data but use real commit count for "You"
-  return {
-    className: 'Computer Science 101',
-    position: 3,
-    totalStudents: 45,
-    averageCommits: 150,
-    yourCommits,
-    topStudents: [
-      { name: 'Alex Chen', commits: 245, position: 1 },
-      { name: 'Maya Patel', commits: 223, position: 2 },
-      { name: 'You', commits: yourCommits, position: 3 },
-      { name: 'Jordan Kim', commits: 189, position: 4 },
-      { name: 'Taylor Swift', commits: 178, position: 5 }
-    ]
   }
 }

@@ -1,9 +1,76 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+interface LeaderboardData {
+  individuals: Array<{
+    rank: number
+    id: string
+    name: string
+    githubUsername: string
+    department: string
+    totalCommits: number
+  }>
+  classes: Array<{
+    rank: number
+    name: string
+    department: string
+    studentCount: number
+    avgCommits: number
+    totalCommits: number
+  }>
+  departments: Array<{
+    rank: number
+    name: string
+    facultySize: number
+    studentCount: number
+    avgCommits: number
+    totalCommits: number
+  }>
+  metadata: {
+    totalStudents: number
+    lastUpdated: string
+    dataSource: string
+  }
+}
 
 export default function LeaderboardPage() {
   const [activeTab, setActiveTab] = useState('individuals')
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchLeaderboardData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await fetch('/api/leaderboard', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch leaderboard data: ${response.status}`)
+      }
+
+      const result = await response.json()
+      if (result.success && result.data) {
+        setLeaderboardData(result.data)
+      } else {
+        throw new Error(result.message || 'Failed to load leaderboard data')
+      }
+    } catch (err) {
+      console.error('Error fetching leaderboard data:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchLeaderboardData()
+  }, [])
 
   if (activeTab === 'departments') {
     return (
@@ -287,6 +354,11 @@ export default function LeaderboardPage() {
       <header className="mb-8">
         <h1 className="text-white text-4xl font-bold leading-tight tracking-tighter">Leaderboard</h1>
         <p className="text-white/60 mt-2">See where you and your peers rank. Keep pushing to climb to the top!</p>
+        {error && (
+          <div className="mt-4 p-4 bg-red-900/50 border border-red-700 rounded-md">
+            <p className="text-red-400">{error}</p>
+          </div>
+        )}
       </header>
 
       {/* Controls */}
@@ -354,155 +426,48 @@ export default function LeaderboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#324d67]">
-              {/* 1st Place */}
-              <tr className="hover:bg-[#233648]/50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-lg font-bold text-[#facc15]">1</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style={{
-                      backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCALmq1nQQo7en9Q4QxpMGPTC5suJr3aUy9xua5TlnnWSVI47brkra-UN8L2ldvnD6GQuffTtEGR1oOKyLamOTHI_XpbCY41xbKHsX0dwyKAKImt77anZYuTrdXQdojQZx-c18TioiTJVH1t9C9nnPUqNCh2DOQdy27fGEk8TMyNxkLYRFYz25r93hhExLQterSSMxp-wCnvEnoEoGannoxCo0MBhZRPdgxrMYG_phjs7omJNHoI4vdKwCtA5yzX-muf3pMTB_zS7w")'
-                    }}></div>
-                    <span className="font-medium">Ethan Harper</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white/80">Computer Science</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-lg font-semibold">548</td>
-              </tr>
-
-              {/* 2nd Place */}
-              <tr className="hover:bg-[#233648]/50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-lg font-bold text-[#c0c0c0]">2</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style={{
-                      backgroundImage: 'url("https://lh3.googleusercontent.com/a/ACg8ocK81o9Qx_rq-mv4lp-29_G-F0vYJFAp32r1QpP-68Ea=s96-c")'
-                    }}></div>
-                    <span className="font-medium">Olivia Bennett</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white/80">Computer Science</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-lg font-semibold">512</td>
-              </tr>
-
-              {/* 3rd Place */}
-              <tr className="hover:bg-[#233648]/50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-lg font-bold text-[#cd7f32]">3</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style={{
-                      backgroundImage: 'url("https://lh3.googleusercontent.com/a/ACg8ocIKk-l_829_G-5z-82vGgT-B6361rR-W-v-1g1=s96-c")'
-                    }}></div>
-                    <span className="font-medium">Noah Carter</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white/80">Electrical Engineering</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-lg font-semibold">491</td>
-              </tr>
-
-              {/* 4th Place */}
-              <tr className="hover:bg-[#233648]/50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-base font-medium">4</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style={{
-                      backgroundImage: 'url("https://lh3.googleusercontent.com/a-/AOh14Gh-Q_V4B-8z_V_Y_e_i_X_J_w_J_A_G-j_C_A=s96-c")'
-                    }}></div>
-                    <span className="font-medium">Ava Mitchell</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white/60">Mathematics</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">453</td>
-              </tr>
-
-              {/* 5th Place */}
-              <tr className="hover:bg-[#233648]/50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-base font-medium">5</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style={{
-                      backgroundImage: 'url("https://lh3.googleusercontent.com/a/ACg8ocL81bW8Zg_2Z-V-j5z2x-Z_C-l_A_j_Q-P=s96-c")'
-                    }}></div>
-                    <span className="font-medium">Liam Foster</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white/60">Computer Science</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">422</td>
-              </tr>
-
-              {/* 6th Place */}
-              <tr className="hover:bg-[#233648]/50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-base font-medium">6</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style={{
-                      backgroundImage: 'url("https://lh3.googleusercontent.com/a/ACg8ocL-g-Z-Z_j_k_L-A-j_Q_P=s96-c")'
-                    }}></div>
-                    <span className="font-medium">Sophia Chen</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white/60">Computer Science</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">398</td>
-              </tr>
-
-              {/* 7th Place */}
-              <tr className="hover:bg-[#233648]/50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-base font-medium">7</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style={{
-                      backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCvEk7DD7Upsm2_KJ2m8eCu9h1_U5xhtIgwaUFlBKuu-Q7ROyEr2oit9lAxpO1Rddnt-F3l0XnX6VUC_nHGbJxFd31oehOOAYDbD6dhGURCJOguNuaKWXMTnW1rrWR2hlBsoKCb8wf-gC4OXsRLjXVemIfzxP5G-2dh2cI3JT5gBX_3nf0NHRHthw59sJxe9O6kCH4VOQ4QcBELFm1eQzgwvZ7QwxuDvZr0hBH1oeElV4NfZZ-tc9ZNX7_ZD1NFnDLk48j_76lezbg")'
-                    }}></div>
-                    <span className="font-medium">Mason Rodriguez</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white/60">Electrical Engineering</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">375</td>
-              </tr>
-
-              {/* 8th Place */}
-              <tr className="hover:bg-[#233648]/50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-base font-medium">8</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style={{
-                      backgroundImage: 'url("https://lh3.googleusercontent.com/a/ACg8ocACL3_L2d9ZY51JBQI1-I8jLc0dCzKy3qf7NoOoju-w-a1I0XYEkJAzxFzWdF=w120-h120-p-rp-mo-ba6-br100")'
-                    }}></div>
-                    <span className="font-medium">Isabella Kim</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white/60">Mathematics</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">351</td>
-              </tr>
-
-              {/* 9th Place */}
-              <tr className="hover:bg-[#233648]/50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-base font-medium">9</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style={{
-                      backgroundImage: 'url("https://lh3.googleusercontent.com/a/a/ACg8ocIF9Cm5YpY-Zw_WuKrq7C5p_7EO6YHwexa7Z1jdwMsQ=s96-c-mo")'
-                    }}></div>
-                    <span className="font-medium">Jameson Lee</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white/60">Physics</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">320</td>
-              </tr>
-
-              {/* 10th Place */}
-              <tr className="hover:bg-[#233648]/50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-base font-medium">10</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style={{
-                      backgroundImage: 'url("https://lh3.googleusercontent.com/a/a/ACg8ocJD5WZhGwAQNMwTdYsrFLZEUdHQ5tVwtzxmCfB5Dg7P1g=s96-c-mo")'
-                    }}></div>
-                    <span className="font-medium">Harper Garcia</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white/60">Computer Science</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">305</td>
-              </tr>
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-8 text-center text-white/60">
+                    Loading leaderboard...
+                  </td>
+                </tr>
+              ) : leaderboardData?.individuals && leaderboardData.individuals.length > 0 ? (
+                leaderboardData.individuals.map((student) => (
+                  <tr key={student.id} className="hover:bg-[#233648]/50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {student.rank === 1 && <span className="text-lg font-bold text-[#facc15]">🥇</span>}
+                      {student.rank === 2 && <span className="text-lg font-bold text-[#c0c0c0]">🥈</span>}
+                      {student.rank === 3 && <span className="text-lg font-bold text-[#cd7f32]">🥉</span>}
+                      {student.rank > 3 && <span className="text-base font-medium">{student.rank}</span>}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                          <span className="text-white text-xs font-semibold uppercase">
+                            {student.name.charAt(0)}
+                          </span>
+                        </div>
+                        <span className="font-medium">{student.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white/80">{student.department}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      {student.rank <= 3 ? (
+                        <span className="text-lg font-semibold">{student.totalCommits.toLocaleString()}</span>
+                      ) : (
+                        <span className="text-base font-medium">{student.totalCommits.toLocaleString()}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4} className="px-6 py-8 text-center text-white/60">
+                    No leaderboard data available
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

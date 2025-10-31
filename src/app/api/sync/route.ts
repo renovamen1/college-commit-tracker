@@ -181,10 +181,10 @@ export async function POST(request: NextRequest) {
 
     console.log(`📊 Found ${allStudents.length} students in database`)
 
-    // For testing, limit to first 3 students to avoid rate limits
-    const students = allStudents.slice(0, 3)
+    // Sync all active students (no limit for production)
+    const students = allStudents
 
-    console.log(`🔄 Syncing first ${students.length} students for testing`)
+    console.log(`🔄 Syncing all ${students.length} students`)
 
     if (students.length === 0) {
       return NextResponse.json({

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import User from '@/lib/models/User'
 import { connectToDatabase } from '@/lib/database'
 import { errorHandler } from '@/lib/middleware/errorHandler'
 import { syncStudentCommits } from '../../route'
+import { MongoClient, ObjectId } from 'mongodb'
 
 /**
  * POST /api/sync/student/[id] - Sync individual student commits
@@ -16,20 +16,24 @@ export async function POST(
   try {
     await connectToDatabase()
 
+    // Get MongoDB client for direct queries to students collection
+    const client = new MongoClient(process.env.MONGODB_URI!)
+    await client.connect()
+    const db = client.db(process.env.MONGODB_NAME || 'college-commit-tracker')
+
     // Try GitHub username lookup FIRST (safer), then fall back to ObjectId
-    const user = await User.findOne({ githubUsername: id, role: 'student' })
-      .select('_id githubUsername totalCommits lastSyncDate name')
-      .exec()
+    let user = await db.collection('students').findOne({
+      githubUsername: id,
+      role: 'student'
+    })
 
     // If GitHub username lookup found nothing, try ObjectId lookup
-    let userById = null
     if (!user && /^[0-9a-fA-F]{24}$/.test(id)) { // Check if it's a valid ObjectId format
-      userById = await User.findOne({ _id: id, role: 'student' })
-        .select('_id githubUsername totalCommits lastSyncDate name')
-        .exec()
+      user = await db.collection('students').findOne({
+        _id: new ObjectId(id),
+        role: 'student'
+      })
     }
-
-    const finalUser = user || userById
 
     if (!user) {
       return NextResponse.json(
@@ -98,11 +102,16 @@ export async function GET(
   try {
     await connectToDatabase()
 
-    // Find the student
-    const user = await User.findOne({
-      _id: id,
+    // Get MongoDB client for direct queries to students collection
+    const client = new MongoClient(process.env.MONGODB_URI!)
+    await client.connect()
+    const db = client.db(process.env.MONGODB_NAME || 'college-commit-tracker')
+
+    // Find the student by ObjectId
+    const user = await db.collection('students').findOne({
+      _id: new ObjectId(id),
       role: 'student'
-    }).select('_id githubUsername totalCommits lastSyncDate name createdAt updatedAt').exec()
+    })
 
     if (!user) {
       return NextResponse.json(
