@@ -36,10 +36,36 @@ export async function GET(request: NextRequest) {
     console.log('✅ Database connected successfully')
 
     console.log('🔍 Looking for seeded student...')
+
+    // DEBUG: Check database connection details
+    console.log('🔍 DEBUG: MongoDB Connection Info')
+    console.log('🔍 DEBUG: MONGODB_URI (first 50 chars):', process.env.MONGODB_URI?.substring(0, 50) + '...')
+    console.log('🔍 DEBUG: MONGODB_NAME:', process.env.MONGODB_NAME || 'college-commit-tracker')
+
     // Get MongoDB client for direct queries to students collection
     const client = new MongoClient(process.env.MONGODB_URI!)
     await client.connect()
     const db = client.db(process.env.MONGODB_NAME || 'college-commit-tracker')
+    console.log('🔍 DEBUG: Connected to database successfully')
+
+    // DEBUG: List all collections in the database
+    const collections = await db.listCollections().toArray()
+    console.log('🔍 DEBUG: Available collections:')
+    collections.forEach((col, i) => {
+      console.log(`   ${i+1}. ${col.name}`)
+    })
+
+    // DEBUG: Check what's in the students collection
+    const studentCount = await db.collection('students').countDocuments()
+    console.log(`🔍 DEBUG: Total students in collection: ${studentCount}`)
+
+    if (studentCount > 0) {
+      console.log('🔍 DEBUG: First 3 students in collection:')
+      const sampleStudents = await db.collection('students').find({}).limit(3).toArray()
+      sampleStudents.forEach((student, i) => {
+        console.log(`   ${i+1}. ${student.name || 'No Name'} (@${student.githubUsername || 'no-username'}) commits: ${student.totalCommits || 0}`)
+      })
+    }
 
     // Use REAL seeded student with direct MongoDB query
     let student = await db.collection('students').findOne({
