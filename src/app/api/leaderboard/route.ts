@@ -27,19 +27,61 @@ export async function GET(request: NextRequest) {
     await client.connect()
     const db = client.db(process.env.MONGODB_NAME || 'college-commit-tracker')
 
-    // Get top 50 individuals by total commits
-    const topIndividuals = await db.collection('students')
-      .find({ role: 'student', isActive: true, totalCommits: { $gt: 0 } })
-      .project({
-        _id: 1,
-        name: 1,
-        githubUsername: 1,
-        totalCommits: 1,
-        department: 1 // If we add department field later
-      })
-      .sort({ totalCommits: -1 })
-      .limit(50)
-      .toArray()
+    // Get top 50 individuals by total commits with department info
+    const topIndividuals = await db.collection('students').aggregate([
+      {
+        $match: {
+          role: 'student',
+          isActive: true,
+          totalCommits: { $gt: 0 }
+        }
+      },
+      {
+        $lookup: {
+          from: 'classes',
+          localField: 'classId',
+          foreignField: '_id',
+          as: 'class'
+        }
+      },
+      {
+        $unwind: {
+          path: '$class',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: 'departments',
+          localField: 'class.departmentId',
+          foreignField: '_id',
+          as: 'department'
+        }
+      },
+      {
+        $unwind: {
+          path: '$department',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          githubUsername: 1,
+          totalCommits: 1,
+          departmentName: '$department.name',
+          className: '$class.name',
+          classCode: '$class.code'
+        }
+      },
+      {
+        $sort: { totalCommits: -1 }
+      },
+      {
+        $limit: 50
+      }
+    ]).toArray()
 
     console.log(`📊 Found ${topIndividuals.length} students with commits for leaderboard`)
 
@@ -49,65 +91,165 @@ export async function GET(request: NextRequest) {
       id: student._id.toString(),
       name: student.name || student.githubUsername || 'Unknown',
       githubUsername: student.githubUsername,
-      department: student.department || 'Computer Science', // Default for now
+      department: student.departmentName || 'Unknown Department',
+      className: student.className,
+      classCode: student.classCode,
       totalCommits: student.totalCommits || 0
     }))
 
-    // For now, return mock data for classes and departments
-    // In a real implementation, we'd aggregate by class and department fields
-    const classes = [
+    // Get real class rankings
+    const classRankings = await db.collection('students').aggregate([
       {
-        rank: 1,
-        name: 'CS101 - Intro to Programming',
-        department: 'Computer Science',
-        studentCount: 45,
-        avgCommits: 152,
-        totalCommits: 6840
+        $match: {
+          role: 'student',
+          isActive: true,
+          totalCommits: { $gt: 0 }
+        }
       },
       {
-        rank: 2,
-        name: 'EE250 - Circuits & Electronics',
-        department: 'Electrical Engineering',
-        studentCount: 38,
-        avgCommits: 145,
-        totalCommits: 5510
+        $lookup: {
+          from: 'classes',
+          localField: 'classId',
+          foreignField: '_id',
+          as: 'class'
+        }
       },
       {
-        rank: 3,
-        name: 'CS212 - Data Structures',
-        department: 'Computer Science',
-        studentCount: 35,
-        avgCommits: 130,
-        totalCommits: 4550
+        $unwind: '$class'
+      },
+      {
+        $lookup: {
+          from: 'departments',
+          localField: 'class.departmentId',
+          foreignField: '_id',
+          as: 'department'
+        }
+      },
+      {
+        $unwind: {
+          path: '$department',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $group: {
+          _id: '$class._id',
+          className: { $first: '$class.name' },
+          classCode: { $first: '$class.code' },
+          departmentName: { $first: '$department.name' },
+          totalCommits: { $sum: '$totalCommits' },
+          studentCount: { $sum: 1 },
+          avgCommits: { $avg: '$totalCommits' }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          classId: '$_id',
+          name: {
+            $concat: ['$classCode', ' - ', '$className']
+          },
+          department: { $ifNull: ['$departmentName', 'Unknown'] },
+          studentCount: 1,
+          avgCommits: { $round: ['$avgCommits', 0] },
+          totalCommits: 1
+        }
+      },
+      {
+        $sort: { avgCommits: -1 }
+      },
+      {
+        $limit: 10
       }
-    ]
+    ]).toArray()
 
-    const departments = [
+    // Format classes with rankings
+    const classes = classRankings.map((cls, index) => ({
+      rank: index + 1,
+      name: cls.name,
+      department: cls.department,
+      studentCount: cls.studentCount,
+      avgCommits: cls.avgCommits,
+      totalCommits: cls.totalCommits
+    }))
+
+    // Get real department rankings
+    const departmentRankings = await db.collection('students').aggregate([
       {
-        rank: 1,
-        name: 'Computer Science',
-        facultySize: 15,
-        studentCount: 250,
-        avgCommits: 125,
-        totalCommits: 31250
+        $match: {
+          role: 'student',
+          isActive: true,
+          totalCommits: { $gt: 0 }
+        }
       },
       {
-        rank: 2,
-        name: 'Electrical Engineering',
-        facultySize: 12,
-        studentCount: 200,
-        avgCommits: 110,
-        totalCommits: 22000
+        $lookup: {
+          from: 'classes',
+          localField: 'classId',
+          foreignField: '_id',
+          as: 'class'
+        }
       },
       {
-        rank: 3,
-        name: 'Mathematics',
-        facultySize: 20,
-        studentCount: 180,
-        avgCommits: 80,
-        totalCommits: 14400
+        $unwind: '$class'
+      },
+      {
+        $lookup: {
+          from: 'departments',
+          localField: 'class.departmentId',
+          foreignField: '_id',
+          as: 'department'
+        }
+      },
+      {
+        $unwind: {
+          path: '$department',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $group: {
+          _id: '$department._id',
+          departmentName: { $first: '$department.name' },
+          totalCommits: { $sum: '$totalCommits' },
+          studentCount: { $sum: 1 },
+          avgCommits: { $avg: '$totalCommits' },
+          facultySize: { $first: '$department.facultySize' }
+        }
+      },
+      {
+        $match: {
+          departmentName: { $ne: null }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          departmentId: '$_id',
+          name: '$departmentName',
+          facultySize: { $ifNull: ['$facultySize', 0] },
+          studentCount: 1,
+          avgCommits: { $round: ['$avgCommits', 0] },
+          totalCommits: 1
+        }
+      },
+      {
+        $sort: { avgCommits: -1 }
+      },
+      {
+        $limit: 10
       }
-    ]
+    ]).toArray()
+
+    // Format departments with rankings
+    const departments = departmentRankings.map((dept, index) => ({
+      rank: index + 1,
+      name: dept.name,
+      facultySize: dept.facultySize,
+      studentCount: dept.studentCount,
+      avgCommits: dept.avgCommits,
+      totalCommits: dept.totalCommits
+    }))
 
     const leaderboardData = {
       individuals,

@@ -9,6 +9,8 @@ interface LeaderboardData {
     name: string
     githubUsername: string
     department: string
+    className?: string
+    classCode?: string
     totalCommits: number
   }>
   classes: Array<{
@@ -78,6 +80,11 @@ export default function LeaderboardPage() {
         <header className="mb-8">
           <h1 className="text-white text-4xl font-bold leading-tight tracking-tighter">Leaderboard</h1>
           <p className="text-white/60 mt-2">See where your class and department rank. Keep pushing to climb to the top!</p>
+          {error && (
+            <div className="mt-4 p-4 bg-red-900/50 border border-red-700 rounded-md">
+              <p className="text-red-400">{error}</p>
+            </div>
+          )}
         </header>
         <div className="flex flex-col gap-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -131,70 +138,35 @@ export default function LeaderboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#324d67]">
-                  <tr className="hover:bg-[#233648]/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-lg font-bold text-[#facc15]">1</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">Computer Science</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">15</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">250</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">125</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-lg font-semibold">31,250</td>
-                  </tr>
-                  <tr className="hover:bg-[#233648]/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-lg font-bold text-[#c0c0c0]">2</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">Electrical Engineering</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">12</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">200</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">110</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-lg font-semibold">22,000</td>
-                  </tr>
-                  <tr className="hover:bg-[#233648]/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-lg font-bold text-[#cd7f32]">3</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">Mathematics</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">20</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">180</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">80</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-lg font-semibold">14,400</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-base font-medium">4</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">Physics</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">10</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">150</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">70</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">10,500</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-base font-medium">5</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">Mechanical Engineering</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">18</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">220</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">45</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">9,900</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-base font-medium">6</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">Biology</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">25</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">300</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">30</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">9,000</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-base font-medium">7</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">Chemistry</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">14</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">170</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">40</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">6,800</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-base font-medium">8</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">Civil Engineering</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">16</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">190</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">25</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">4,750</td>
-                  </tr>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-8 text-center text-white/60">
+                        Loading departments...
+                      </td>
+                    </tr>
+                  ) : leaderboardData?.departments && leaderboardData.departments.length > 0 ? (
+                    leaderboardData.departments.map((dept) => (
+                      <tr key={dept.name} className="hover:bg-[#233648]/50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {dept.rank === 1 && <span className="text-lg font-bold text-[#facc15]">🥇</span>}
+                          {dept.rank === 2 && <span className="text-lg font-bold text-[#c0c0c0]">🥈</span>}
+                          {dept.rank === 3 && <span className="text-lg font-bold text-[#cd7f32]">🥉</span>}
+                          {dept.rank > 3 && <span className="text-base font-medium">{dept.rank}</span>}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap font-medium">{dept.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{dept.facultySize}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{dept.studentCount}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{dept.avgCommits}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-lg font-semibold">{dept.totalCommits.toLocaleString()}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-8 text-center text-white/60">
+                        No department data available
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -210,6 +182,11 @@ export default function LeaderboardPage() {
         <header className="mb-8">
           <h1 className="text-white text-4xl font-bold leading-tight tracking-tighter">Leaderboard</h1>
           <p className="text-white/60 mt-2">See where your class and department rank. Keep pushing to climb to the top!</p>
+          {error && (
+            <div className="mt-4 p-4 bg-red-900/50 border border-red-700 rounded-md">
+              <p className="text-red-400">{error}</p>
+            </div>
+          )}
         </header>
         <div className="flex flex-col gap-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -275,70 +252,35 @@ export default function LeaderboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#324d67]">
-                  <tr className="hover:bg-[#233648]/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-lg font-bold text-[#facc15]">1</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">CS101 - Intro to Programming</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white/80">Computer Science</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">45</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">152</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-lg font-semibold">6,840</td>
-                  </tr>
-                  <tr className="hover:bg-[#233648]/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-lg font-bold text-[#c0c0c0]">2</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">EE250 - Circuits & Electronics</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white/80">Electrical Engineering</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">38</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">145</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-lg font-semibold">5,510</td>
-                  </tr>
-                  <tr className="hover:bg-[#233648]/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-lg font-bold text-[#cd7f32]">3</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">CS212 - Data Structures</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white/80">Computer Science</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">35</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">130</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-lg font-semibold">4,550</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-base font-medium">4</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">MA320 - Linear Algebra</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white/60">Mathematics</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">25</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">120</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">3,000</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-base font-medium">5</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">CS350 - Operating Systems</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white/60">Computer Science</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">30</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">95</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">2,850</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-base font-medium">6</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">PHY201 - Classical Mechanics</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white/60">Physics</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">28</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">88</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">2,464</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-base font-medium">7</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">EE310 - Signal Processing</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white/60">Electrical Engineering</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">22</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">75</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">1,650</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-base font-medium">8</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">MA250 - Differential Equations</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white/60">Mathematics</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">32</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">50</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">1,600</td>
-                  </tr>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-8 text-center text-white/60">
+                        Loading classes...
+                      </td>
+                    </tr>
+                  ) : leaderboardData?.classes && leaderboardData.classes.length > 0 ? (
+                    leaderboardData.classes.map((cls) => (
+                      <tr key={cls.name} className="hover:bg-[#233648]/50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {cls.rank === 1 && <span className="text-lg font-bold text-[#facc15]">🥇</span>}
+                          {cls.rank === 2 && <span className="text-lg font-bold text-[#c0c0c0]">🥈</span>}
+                          {cls.rank === 3 && <span className="text-lg font-bold text-[#cd7f32]">🥉</span>}
+                          {cls.rank > 3 && <span className="text-base font-medium">{cls.rank}</span>}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap font-medium">{cls.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-white/80">{cls.department}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{cls.studentCount}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{cls.avgCommits}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-lg font-semibold">{cls.totalCommits.toLocaleString()}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-8 text-center text-white/60">
+                        No class data available
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
