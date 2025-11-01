@@ -143,19 +143,24 @@ export async function GET(request: NextRequest) {
       ]
     }
 
+    // Get college-wide statistics
+    const collegeStats = await getCollegeStats()
+
     // Get real analytics or calculate from synced data
     const dashboardData = {
       personal: {
         totalCommits: student.totalCommits || 0,
         currentStreak: student.totalCommits ? Math.floor(student.totalCommits / 10) + 1 : calculateStreak(),
         githubUsername: student.githubUsername,
+        name: student.name,
         lastSyncDate: student.lastSyncDate,
         activeSince: student.createdAt,
         rank: await calculateStudentRank(student.githubUsername)
       },
       repositories,
       contributionCalendar: generateContributionCalendar(),
-      classStanding: await getClassStanding(student._id?.toString())
+      classStanding: await getClassStanding(student._id?.toString()),
+      collegeStats
     }
 
     console.log('✅ Dashboard data generated with real repositories')
@@ -211,23 +216,68 @@ function generateContributionCalendar() {
 }
 
 async function calculateStudentRank(githubUsername: string): Promise<string> {
-  // Real ranking calculation based on seeded students
-  const seededStudents = [
-    'torvalds',      // 25,000+ commits (Linus Torvalds)
-    'yyx990803',    // 18,000+ commits (Evan You)
-    'gaearon',      // 12,000+ commits (Dan Abramov)
-    'ruanyf',       // 10,000+ commits (Ruan Yifeng)
-    'peng-zhihui',  // 8,000+ commits (Zhihui Peng)
-    'gustavoguanabara', // Major content creator
-    'bradtraversy', // Popular developer
-    'sjwhitworth',  // AI/ML developer
-    'karpathy',     // 5,000+ commits (Andrej Karpathy)
-    'rafaballerini' // Popular content creator
-    // ... and 125 more seeded students
-  ]
+  // Get MongoDB client for ranking calculation
+  const client = new MongoClient(process.env.MONGODB_URI!)
+  await client.connect()
+  const db = client.db(process.env.MONGODB_NAME || 'college-commit-tracker')
 
-  const position = seededStudents.indexOf(githubUsername) + 1
-  return position > 0 ? `#${position}` : '#N/A'
+  try {
+    // Get all students sorted by total commits (descending)
+    const allStudents = await db.collection('students')
+      .find({ role: 'student', isActive: true })
+      .project({ githubUsername: 1, totalCommits: 1 })
+      .sort({ totalCommits: -1 })
+      .toArray()
+
+    // Find the position of the current student
+    const studentIndex = allStudents.findIndex(student => student.githubUsername === githubUsername)
+    const position = studentIndex !== -1 ? studentIndex + 1 : 0
+
+    console.log(`📊 Student ${githubUsername} college ranking: ${position}/${allStudents.length}`)
+
+    return position > 0 ? `#${position}` : '#N/A'
+  } catch (error) {
+    console.error('❌ Error calculating student rank:', error)
+    return '#N/A'
+  } finally {
+    client.close()
+  }
+}
+
+async function getCollegeStats() {
+  // Get MongoDB client for college statistics
+  const client = new MongoClient(process.env.MONGODB_URI!)
+  await client.connect()
+  const db = client.db(process.env.MONGODB_NAME || 'college-commit-tracker')
+
+  try {
+    // Get all active students
+    const allStudents = await db.collection('students')
+      .find({ role: 'student', isActive: true })
+      .project({ totalCommits: 1 })
+      .toArray()
+
+    const totalStudents = allStudents.length
+    const totalCommits = allStudents.reduce((sum, student) => sum + (student.totalCommits || 0), 0)
+    const averageCommits = totalStudents > 0 ? Math.round(totalCommits / totalStudents) : 0
+
+    console.log(`📊 College stats: ${totalStudents} students, ${totalCommits} total commits, ${averageCommits} avg commits`)
+
+    return {
+      totalStudents,
+      totalCommits,
+      averageCommits
+    }
+  } catch (error) {
+    console.error('❌ Error getting college stats:', error)
+    return {
+      totalStudents: 0,
+      totalCommits: 0,
+      averageCommits: 0
+    }
+  } finally {
+    client.close()
+  }
 }
 
 async function getClassStanding(studentId: string) {
@@ -242,7 +292,7 @@ async function getClassStanding(studentId: string) {
     // Get current student's data
     const currentStudent = await db.collection('students').findOne(
       { _id: new ObjectId(studentId) },
-      { projection: { totalCommits: 1, name: 1, githubUsername: 1, department: 1 } }
+      { projection: { totalCommits: 1, name: 1, githubUsername: 1, department: 1, classId: 1 } }
     )
 
     if (!currentStudent) {
@@ -302,8 +352,20 @@ async function getClassStanding(studentId: string) {
 
     console.log(`📊 Top 5 students:`, topStudents.map(s => `${s.position}. ${s.name}: ${s.commits} commits`))
 
+    // Get the actual class name from the Class collection
+    let className = 'Not Enrolled'
+    if (currentStudent.classId) {
+      const classDoc = await db.collection('classes').findOne(
+        { _id: new ObjectId(currentStudent.classId) },
+        { projection: { name: 1 } }
+      )
+      if (classDoc) {
+        className = classDoc.name
+      }
+    }
+
     return {
-      className: currentStudent.department || 'Computer Science 101', // Use real department name
+      className,
       position,
       totalStudents: allStudents.length,
       averageCommits,

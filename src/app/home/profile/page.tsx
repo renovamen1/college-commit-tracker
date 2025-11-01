@@ -8,6 +8,7 @@ interface DashboardData {
     totalCommits: number
     currentStreak: number
     githubUsername: string
+    name?: string
     lastSyncDate: Date | null
     activeSince: Date
     rank: string
@@ -33,6 +34,11 @@ interface DashboardData {
       commits: number
       position: number
     }>
+  }
+  collegeStats: {
+    totalStudents: number
+    totalCommits: number
+    averageCommits: number
   }
 }
 
@@ -159,6 +165,54 @@ export default function ProfilePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Main Content */}
         <div className="lg:col-span-2">
+          {/* Personal Details Section */}
+          <section>
+            <h2 className="text-white text-2xl font-bold leading-tight tracking-tight">Personal Details</h2>
+            <div className="mt-4 p-6 rounded-md bg-[#192633] border border-[#324d67]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="flex flex-col gap-2">
+                  <p className="text-white/60 text-base font-medium leading-normal">Name</p>
+                  <p className="text-white tracking-light text-xl font-semibold leading-tight">
+                    {dashboardData?.personal.name || 'Not provided'}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <p className="text-white/60 text-base font-medium leading-normal">GitHub Username</p>
+                  <p className="text-white tracking-light text-xl font-semibold leading-tight">
+                    @{dashboardData?.personal.githubUsername || 'Not available'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* College Ranking Section */}
+          <section className="mt-8">
+            <h2 className="text-white text-2xl font-bold leading-tight tracking-tight">College Ranking</h2>
+            <div className="mt-4 p-6 rounded-md bg-[#192633] border border-[#324d67]">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2">
+                  <p className="text-white/60 text-base font-medium leading-normal">Overall College Rank</p>
+                  <p className="text-white tracking-light text-3xl font-bold leading-tight">
+                    {dashboardData?.personal.rank || '#N/A'}
+                  </p>
+                  <p className="text-white/80 text-sm">
+                    Out of {dashboardData?.collegeStats?.totalStudents || 0} students
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="text-4xl mb-2">
+                    {dashboardData?.personal.rank === '#1' && '🥇'}
+                    {dashboardData?.personal.rank === '#2' && '🥈'}
+                    {dashboardData?.personal.rank === '#3' && '🥉'}
+                    {parseInt(dashboardData?.personal.rank?.replace('#', '') || '0') > 3 && '🏆'}
+                  </div>
+                  <p className="text-white/60 text-sm">College Wide</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* Contributions Section */}
           <section>
             <h2 className="text-white text-2xl font-bold leading-tight tracking-tight">Contributions</h2>

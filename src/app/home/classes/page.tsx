@@ -97,7 +97,7 @@ export default function ClassesPage() {
       <header className="mb-8">
         <div className="flex items-center justify-between">
           <h1 className="text-white text-4xl font-bold leading-tight tracking-tighter min-w-72">
-            {selectedClass ? selectedClass.displayName : 'Select 2 Class'}
+            {selectedClass ? selectedClass.displayName : 'Select a Class'}
           </h1>
           <div className="relative">
             <select
