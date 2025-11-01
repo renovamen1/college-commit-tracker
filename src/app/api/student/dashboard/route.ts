@@ -242,7 +242,7 @@ async function getClassStanding(studentId: string) {
     // Get current student's data
     const currentStudent = await db.collection('students').findOne(
       { _id: new ObjectId(studentId) },
-      { projection: { totalCommits: 1, name: 1, githubUsername: 1 } }
+      { projection: { totalCommits: 1, name: 1, githubUsername: 1, department: 1 } }
     )
 
     if (!currentStudent) {
@@ -303,7 +303,7 @@ async function getClassStanding(studentId: string) {
     console.log(`📊 Top 5 students:`, topStudents.map(s => `${s.position}. ${s.name}: ${s.commits} commits`))
 
     return {
-      className: 'Computer Science 101', // In real app, get from student's class
+      className: currentStudent.department || 'Computer Science 101', // Use real department name
       position,
       totalStudents: allStudents.length,
       averageCommits,
