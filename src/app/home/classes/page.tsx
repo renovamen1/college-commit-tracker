@@ -97,7 +97,7 @@ export default function ClassesPage() {
       <header className="mb-8">
         <div className="flex items-center justify-between">
           <h1 className="text-white text-4xl font-bold leading-tight tracking-tighter min-w-72">
-            {selectedClass ? selectedClass.displayName : 'Select a Class'}
+            {selectedClass ? selectedClass.displayName : 'Select 2 Class'}
           </h1>
           <div className="relative">
             <select
@@ -105,6 +105,9 @@ export default function ClassesPage() {
               onChange={(e) => setSelectedClassId(e.target.value)}
               className="form-select w-72 appearance-none rounded-md border border-[#324d67] bg-[#192633] px-4 py-2.5 text-white focus:border-[#1172d4] focus:outline-none focus:ring-1 focus:ring-[#1172d4]"
             >
+              <option value="" disabled>
+                Select a class
+              </option>
               {classes.map(cls => (
                 <option key={cls.id} value={cls.id}>
                   {cls.displayName}
