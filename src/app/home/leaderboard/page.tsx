@@ -197,7 +197,7 @@ export default function LeaderboardPage() {
                 Individuals
               </button>
               <button
-                className="bg-[#233648] text-white text-sm font-medium px-4 py-2 rounded-md"
+                className="bg-transparent text-white/60 hover:bg-[#233648] hover:text-white transition-colors text-sm font-medium px-4 py-2 rounded-md"
                 onClick={() => setActiveTab('classes')}
               >
                 Classes
@@ -309,8 +309,6 @@ export default function LeaderboardPage() {
           </div>
         )}
       </header>
-
-      {/* Controls */}
       <div className="flex flex-col gap-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
@@ -360,65 +358,65 @@ export default function LeaderboardPage() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Leaderboard Table */}
-      <div className="bg-[#192633] border border-[#324d67] rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-white">
-            <thead>
-              <tr className="bg-[#233648]">
-                <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Rank</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Department</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Total Commits</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#324d67]">
-              {loading ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-white/60">
-                    Loading leaderboard...
-                  </td>
+        {/* Leaderboard Table */}
+        <div className="bg-[#192633] border border-[#324d67] rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-white">
+              <thead>
+                <tr className="bg-[#233648]">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Rank</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Department</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Total Commits</th>
                 </tr>
-              ) : leaderboardData?.individuals && leaderboardData.individuals.length > 0 ? (
-                leaderboardData.individuals.map((student) => (
-                  <tr key={student.id} className="hover:bg-[#233648]/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {student.rank === 1 && <span className="text-lg font-bold text-[#facc15]">🥇</span>}
-                      {student.rank === 2 && <span className="text-lg font-bold text-[#c0c0c0]">🥈</span>}
-                      {student.rank === 3 && <span className="text-lg font-bold text-[#cd7f32]">🥉</span>}
-                      {student.rank > 3 && <span className="text-base font-medium">{student.rank}</span>}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
-                          <span className="text-white text-xs font-semibold uppercase">
-                            {student.name.charAt(0)}
-                          </span>
-                        </div>
-                        <span className="font-medium">{student.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white/80">{student.department}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      {student.rank <= 3 ? (
-                        <span className="text-lg font-semibold">{student.totalCommits.toLocaleString()}</span>
-                      ) : (
-                        <span className="text-base font-medium">{student.totalCommits.toLocaleString()}</span>
-                      )}
+              </thead>
+              <tbody className="divide-y divide-[#324d67]">
+                {loading ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-white/60">
+                      Loading leaderboard...
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-white/60">
-                    No leaderboard data available
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                ) : leaderboardData?.individuals && leaderboardData.individuals.length > 0 ? (
+                  leaderboardData.individuals.map((student) => (
+                    <tr key={student.id} className="hover:bg-[#233648]/50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {student.rank === 1 && <span className="text-lg font-bold text-[#facc15]">🥇</span>}
+                        {student.rank === 2 && <span className="text-lg font-bold text-[#c0c0c0]">🥈</span>}
+                        {student.rank === 3 && <span className="text-lg font-bold text-[#cd7f32]">🥉</span>}
+                        {student.rank > 3 && <span className="text-base font-medium">{student.rank}</span>}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                            <span className="text-white text-xs font-semibold uppercase">
+                              {student.name.charAt(0)}
+                            </span>
+                          </div>
+                          <span className="font-medium">{student.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white/80">{student.department}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        {student.rank <= 3 ? (
+                          <span className="text-lg font-semibold">{student.totalCommits.toLocaleString()}</span>
+                        ) : (
+                          <span className="text-base font-medium">{student.totalCommits.toLocaleString()}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-white/60">
+                      No leaderboard data available
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
