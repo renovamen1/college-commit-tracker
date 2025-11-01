@@ -41,6 +41,7 @@ export default function LeaderboardPage() {
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('all')
 
   const fetchLeaderboardData = async () => {
     try {
@@ -212,11 +213,17 @@ export default function LeaderboardPage() {
             </div>
             <div className="flex items-center gap-4">
               <div className="relative">
-                <select className="form-select appearance-none bg-[#233648] border border-[#324d67] text-white text-sm rounded-md pl-3 pr-8 py-2 focus:outline-none focus:ring-1 focus:ring-[#1173d4]">
-                  <option>All Departments</option>
-                  <option>Computer Science</option>
-                  <option>Electrical Engineering</option>
-                  <option>Mathematics</option>
+                <select
+                  value={selectedDepartment}
+                  onChange={(e) => setSelectedDepartment(e.target.value)}
+                  className="form-select appearance-none bg-[#233648] border border-[#324d67] text-white text-sm rounded-md pl-3 pr-8 py-2 focus:outline-none focus:ring-1 focus:ring-[#1173d4]"
+                >
+                  <option value="all">All Departments</option>
+                  {leaderboardData?.departments?.map((dept) => (
+                    <option key={dept.name} value={dept.name}>
+                      {dept.name}
+                    </option>
+                  ))}
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white/60">
                   <svg className="fill-current h-4 w-4" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -259,21 +266,23 @@ export default function LeaderboardPage() {
                       </td>
                     </tr>
                   ) : leaderboardData?.classes && leaderboardData.classes.length > 0 ? (
-                    leaderboardData.classes.map((cls) => (
-                      <tr key={cls.name} className="hover:bg-[#233648]/50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {cls.rank === 1 && <span className="text-lg font-bold text-[#facc15]">🥇</span>}
-                          {cls.rank === 2 && <span className="text-lg font-bold text-[#c0c0c0]">🥈</span>}
-                          {cls.rank === 3 && <span className="text-lg font-bold text-[#cd7f32]">🥉</span>}
-                          {cls.rank > 3 && <span className="text-base font-medium">{cls.rank}</span>}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap font-medium">{cls.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-white/80">{cls.department}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{cls.studentCount}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{cls.avgCommits}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-lg font-semibold">{cls.totalCommits.toLocaleString()}</td>
-                      </tr>
-                    ))
+                    leaderboardData.classes
+                      .filter((cls) => selectedDepartment === 'all' || cls.department === selectedDepartment)
+                      .map((cls) => (
+                        <tr key={cls.name} className="hover:bg-[#233648]/50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {cls.rank === 1 && <span className="text-lg font-bold text-[#facc15]">🥇</span>}
+                            {cls.rank === 2 && <span className="text-lg font-bold text-[#c0c0c0]">🥈</span>}
+                            {cls.rank === 3 && <span className="text-lg font-bold text-[#cd7f32]">🥉</span>}
+                            {cls.rank > 3 && <span className="text-base font-medium">{cls.rank}</span>}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap font-medium">{cls.name}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-white/80">{cls.department}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{cls.studentCount}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{cls.avgCommits}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-lg font-semibold">{cls.totalCommits.toLocaleString()}</td>
+                        </tr>
+                      ))
                   ) : (
                     <tr>
                       <td colSpan={6} className="px-6 py-8 text-center text-white/60">
