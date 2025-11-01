@@ -214,7 +214,7 @@ export default function ProfilePage() {
           </section>
 
           {/* Contributions Section */}
-          <section>
+          <section className="mt-8">
             <h2 className="text-white text-2xl font-bold leading-tight tracking-tight">Contributions</h2>
             <div className="mt-4 p-6 rounded-md bg-[#192633] border border-[#324d67]">
               <div className="flex flex-col gap-4">
@@ -243,6 +243,23 @@ export default function ProfilePage() {
                   </p>
                 </div>
               </div>
+            </div>
+          </section>
+
+          {/* Settings Section */}
+          <section className="mt-8">
+            <h3 className="text-white text-lg font-semibold mb-3">Settings</h3>
+            <div className="flex flex-col gap-3">
+
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-3 text-red-400 hover:text-red-300 bg-[#192633] hover:bg-red-900/20 border border-[#233648] rounded-lg p-4 transition-colors w-full text-left"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
+                </svg>
+                <span>Logout</span>
+              </button>
             </div>
           </section>
         </div>
@@ -320,23 +337,6 @@ export default function ProfilePage() {
                   </a>
                 </>
               )}
-            </div>
-          </section>
-
-          {/* Settings Section */}
-          <section className="mt-8">
-            <h3 className="text-white text-lg font-semibold mb-3">Settings</h3>
-            <div className="flex flex-col gap-3">
-            
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-3 text-red-400 hover:text-red-300 bg-[#192633] hover:bg-red-900/20 border border-[#233648] rounded-lg p-4 transition-colors w-full text-left"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
-                </svg>
-                <span>Logout</span>
-              </button>
             </div>
           </section>
         </div>
