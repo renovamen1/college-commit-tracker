@@ -183,14 +183,14 @@ export default function ClassesPage() {
 
               {/* Member Contributions */}
               <section className="mt-12">
-                <h2 className="text-white text-2xl font-bold leading-tight tracking-tight">Member Contributions</h2>
+                <h2 className="text-white text-2xl font-bold leading-tight tracking-tight">Top Contributors</h2>
                 <div className="mt-4 overflow-x-auto">
                   <div className="inline-block min-w-full align-middle">
                     <div className="overflow-hidden rounded-md border border-[#324d67] bg-[#111a22]">
                       <table className="min-w-full divide-y divide-[#324d67]">
                         <thead className="bg-[#192633]">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider" scope="col">Member</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider" scope="col">Name</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider" scope="col">GitHub Username</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider" scope="col">Commits</th>
                           </tr>

@@ -126,51 +126,49 @@ export default function LeaderboardPage() {
             </div>
           </div>
           <div className="bg-[#192633] border border-[#324d67] rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-white">
-                <thead>
-                  <tr className="bg-[#233648]">
-                    <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Rank</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Department Name</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Faculty Size</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Total Students</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Avg. Commits / Student</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Total Commits</th>
+            <table className="min-w-full text-white">
+              <thead>
+                <tr className="bg-[#233648]">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Rank</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Department Name</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Faculty Size</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Total Students</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Avg. Commits / Student</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Total Commits</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#324d67]">
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-white/60">
+                      Loading departments...
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-[#324d67]">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-8 text-center text-white/60">
-                        Loading departments...
+                ) : leaderboardData?.departments && leaderboardData.departments.length > 0 ? (
+                  leaderboardData.departments.map((dept) => (
+                    <tr key={dept.name} className="hover:bg-[#233648]/50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {dept.rank === 1 && <span className="text-lg font-bold text-[#facc15]">🥇</span>}
+                        {dept.rank === 2 && <span className="text-lg font-bold text-[#c0c0c0]">🥈</span>}
+                        {dept.rank === 3 && <span className="text-lg font-bold text-[#cd7f32]">🥉</span>}
+                        {dept.rank > 3 && <span className="text-base font-medium">{dept.rank}</span>}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap font-medium">{dept.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{dept.facultySize}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{dept.studentCount}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{dept.avgCommits}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-lg font-semibold">{dept.totalCommits.toLocaleString()}</td>
                     </tr>
-                  ) : leaderboardData?.departments && leaderboardData.departments.length > 0 ? (
-                    leaderboardData.departments.map((dept) => (
-                      <tr key={dept.name} className="hover:bg-[#233648]/50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {dept.rank === 1 && <span className="text-lg font-bold text-[#facc15]">🥇</span>}
-                          {dept.rank === 2 && <span className="text-lg font-bold text-[#c0c0c0]">🥈</span>}
-                          {dept.rank === 3 && <span className="text-lg font-bold text-[#cd7f32]">🥉</span>}
-                          {dept.rank > 3 && <span className="text-base font-medium">{dept.rank}</span>}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap font-medium">{dept.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{dept.facultySize}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{dept.studentCount}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{dept.avgCommits}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-lg font-semibold">{dept.totalCommits.toLocaleString()}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-8 text-center text-white/60">
-                        No department data available
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-white/60">
+                      No department data available
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -250,18 +248,18 @@ export default function LeaderboardPage() {
               <table className="min-w-full text-white">
                 <thead>
                   <tr className="bg-[#233648]">
-                    <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Rank</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Class Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Department</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Students</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Avg. Commits</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Total Commits</th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider w-16">Rank</th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Class Name</th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Department</th>
+                    <th className="px-3 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider w-20">Students</th>
+                    <th className="px-3 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider w-24">Avg Commits</th>
+                    <th className="px-3 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider w-28">Total Commits</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#324d67]">
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-8 text-center text-white/60">
+                      <td colSpan={6} className="px-3 py-8 text-center text-white/60">
                         Loading classes...
                       </td>
                     </tr>
@@ -270,22 +268,22 @@ export default function LeaderboardPage() {
                       .filter((cls) => selectedDepartment === 'all' || cls.department === selectedDepartment)
                       .map((cls) => (
                         <tr key={cls.name} className="hover:bg-[#233648]/50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-3 py-4 whitespace-nowrap w-16">
                             {cls.rank === 1 && <span className="text-lg font-bold text-[#facc15]">🥇</span>}
                             {cls.rank === 2 && <span className="text-lg font-bold text-[#c0c0c0]">🥈</span>}
                             {cls.rank === 3 && <span className="text-lg font-bold text-[#cd7f32]">🥉</span>}
                             {cls.rank > 3 && <span className="text-base font-medium">{cls.rank}</span>}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap font-medium">{cls.name}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-white/80">{cls.department}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{cls.studentCount}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{cls.avgCommits}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-lg font-semibold">{cls.totalCommits.toLocaleString()}</td>
+                          <td className="px-3 py-4 whitespace-nowrap font-medium max-w-xs truncate" title={cls.name}>{cls.name}</td>
+                          <td className="px-3 py-4 whitespace-nowrap text-sm text-white/80 max-w-xs truncate" title={cls.department}>{cls.department}</td>
+                          <td className="px-3 py-4 whitespace-nowrap text-right text-base font-medium w-20">{cls.studentCount}</td>
+                          <td className="px-3 py-4 whitespace-nowrap text-right text-base font-medium w-24">{cls.avgCommits}</td>
+                          <td className="px-3 py-4 whitespace-nowrap text-right text-lg font-semibold w-28">{cls.totalCommits.toLocaleString()}</td>
                         </tr>
                       ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="px-6 py-8 text-center text-white/60">
+                      <td colSpan={6} className="px-3 py-8 text-center text-white/60">
                         No class data available
                       </td>
                     </tr>
