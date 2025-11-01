@@ -130,40 +130,38 @@ export default function LeaderboardPage() {
             <table className="min-w-full text-white">
               <thead>
                 <tr className="bg-[#233648]">
-                  <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Rank</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-white/60 uppercase tracking-wider">Rank</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Department Name</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Faculty Size</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Total Students</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Avg. Commits / Student</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Total Commits</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-white/60 uppercase tracking-wider">Total Students</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-white/60 uppercase tracking-wider">Avg. Commits / Student</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-white/60 uppercase tracking-wider">Total Commits</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#324d67]">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-white/60">
+                    <td colSpan={5} className="px-6 py-8 text-center text-white/60">
                       Loading departments...
                     </td>
                   </tr>
                 ) : leaderboardData?.departments && leaderboardData.departments.length > 0 ? (
                   leaderboardData.departments.map((dept) => (
                     <tr key={dept.name} className="hover:bg-[#233648]/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
                         {dept.rank === 1 && <span className="text-lg font-bold text-[#facc15]">🥇</span>}
                         {dept.rank === 2 && <span className="text-lg font-bold text-[#c0c0c0]">🥈</span>}
                         {dept.rank === 3 && <span className="text-lg font-bold text-[#cd7f32]">🥉</span>}
                         {dept.rank > 3 && <span className="text-base font-medium">{dept.rank}</span>}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap font-medium">{dept.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{dept.facultySize}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{dept.studentCount}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-base font-medium">{dept.avgCommits}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-lg font-semibold">{dept.totalCommits.toLocaleString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-base font-medium">{dept.studentCount}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-base font-medium">{dept.avgCommits}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-lg font-semibold">{dept.totalCommits.toLocaleString()}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-white/60">
+                    <td colSpan={5} className="px-6 py-8 text-center text-white/60">
                       No department data available
                     </td>
                   </tr>
@@ -253,12 +251,12 @@ export default function LeaderboardPage() {
               <table className="min-w-full text-white">
                 <thead>
                   <tr className="bg-[#233648]">
-                    <th className="px-3 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider w-16">Rank</th>
+                    <th className="px-3 py-3 text-center text-xs font-medium text-white/60 uppercase tracking-wider w-16">Rank</th>
                     <th className="px-3 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Class Name</th>
                     <th className="px-3 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Department</th>
-                    <th className="px-3 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider w-20">Students</th>
-                    <th className="px-3 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider w-24">Avg Commits</th>
-                    <th className="px-3 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider w-28">Total Commits</th>
+                    <th className="px-3 py-3 text-center text-xs font-medium text-white/60 uppercase tracking-wider w-20">Students</th>
+                    <th className="px-3 py-3 text-center text-xs font-medium text-white/60 uppercase tracking-wider w-24">Avg Commits</th>
+                    <th className="px-3 py-3 text-center text-xs font-medium text-white/60 uppercase tracking-wider w-28">Total Commits</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#324d67]">
@@ -287,7 +285,7 @@ export default function LeaderboardPage() {
                         const newRank = index + 1
                         return (
                           <tr key={cls.name} className="hover:bg-[#233648]/50 transition-colors">
-                            <td className="px-3 py-4 whitespace-nowrap w-16">
+                            <td className="px-3 py-4 whitespace-nowrap text-center w-16">
                               {newRank === 1 && <span className="text-lg font-bold text-[#facc15]">🥇</span>}
                               {newRank === 2 && <span className="text-lg font-bold text-[#c0c0c0]">🥈</span>}
                               {newRank === 3 && <span className="text-lg font-bold text-[#cd7f32]">🥉</span>}
@@ -295,9 +293,9 @@ export default function LeaderboardPage() {
                             </td>
                             <td className="px-3 py-4 whitespace-nowrap font-medium max-w-xs truncate" title={cls.name}>{cls.name}</td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-white/80 max-w-xs truncate" title={cls.department}>{cls.department}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-right text-base font-medium w-20">{cls.studentCount}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-right text-base font-medium w-24">{cls.avgCommits}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-right text-lg font-semibold w-28">{cls.totalCommits.toLocaleString()}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-center text-base font-medium w-20">{cls.studentCount}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-center text-base font-medium w-24">{cls.avgCommits}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-center text-lg font-semibold w-28">{cls.totalCommits.toLocaleString()}</td>
                           </tr>
                         )
                       })
@@ -360,10 +358,10 @@ export default function LeaderboardPage() {
             <table className="min-w-full text-white">
               <thead>
                 <tr className="bg-[#233648]">
-                  <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Rank</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-white/60 uppercase tracking-wider">Rank</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Department</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Total Commits</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-white/60 uppercase tracking-wider">Total Commits</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#324d67]">
@@ -376,7 +374,7 @@ export default function LeaderboardPage() {
                 ) : leaderboardData?.individuals && leaderboardData.individuals.length > 0 ? (
                   leaderboardData.individuals.map((student) => (
                     <tr key={student.id} className="hover:bg-[#233648]/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
                         {student.rank === 1 && <span className="text-lg font-bold text-[#facc15]">🥇</span>}
                         {student.rank === 2 && <span className="text-lg font-bold text-[#c0c0c0]">🥈</span>}
                         {student.rank === 3 && <span className="text-lg font-bold text-[#cd7f32]">🥉</span>}
@@ -393,7 +391,7 @@ export default function LeaderboardPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-white/80">{student.department}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
                         {student.rank <= 3 ? (
                           <span className="text-lg font-semibold">{student.totalCommits.toLocaleString()}</span>
                         ) : (
